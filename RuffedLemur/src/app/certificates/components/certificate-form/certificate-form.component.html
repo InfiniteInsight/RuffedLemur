@@ -1,0 +1,136 @@
+<!-- src/app/certificates/components/certificate-form/certificate-form.component.html -->
+<div class="certificate-form-container">
+  <div class="form-header">
+    <button mat-icon-button (click)="cancel()" aria-label="Cancel">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>{{ isEditMode ? 'Edit Certificate' : 'Create New Certificate' }}</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <form [formGroup]="certificateForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="certificate-form">
+    <mat-card>
+      <mat-card-content>
+        <div class="form-section">
+          <h3>Basic Information</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" placeholder="Certificate name">
+              <mat-error *ngIf="certificateForm.get('name')?.hasError('required')">
+                Name is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Common Name</mat-label>
+              <input matInput formControlName="commonName" placeholder="Common name (e.g., example.com)">
+              <mat-error *ngIf="certificateForm.get('commonName')?.hasError('required')">
+                Common Name is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Subject Alternative Name</mat-label>
+              <input matInput formControlName="san" placeholder="Subject Alternative Name (e.g., example.com, example2.com, example3.com)">
+            </mat-form-field>
+          </div>
+
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Owner</mat-label>
+              <input matInput formControlName="owner" placeholder="Certificate owner">
+              <mat-error *ngIf="certificateForm.get('owner')?.hasError('required')">
+                Owner is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" placeholder="Optional description" rows="3"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Team</mat-label>
+            <textarea matInput formControlName="description" placeholder="Owning Team e-mail address" rows="3"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+        <div class="form-section">
+          <h3>Authority</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Certificate Authority</mat-label>
+              <mat-select formControlName="authorityId">
+                <mat-option *ngFor="let authority of authorities" [value]="authority.id">
+                  {{ authority.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="certificateForm.get('authorityId')?.hasError('required')">
+                Certificate Authority is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Domains</h3>
+
+          <div formArrayName="domains" class="domains-container">
+            <div *ngFor="let domain of domainsArray.controls; let i = index" class="domain-row">
+              <mat-form-field appearance="outline" class="domain-field">
+                <mat-label>Domain {{ i + 1 }}</mat-label>
+                <input matInput [formControlName]="i" placeholder="Domain name">
+                <mat-error *ngIf="domainsArray.at(i)?.hasError('required')">
+                  Domain is required
+                </mat-error>
+              </mat-form-field>
+
+              <button
+                type="button"
+                mat-icon-button
+                color="warn"
+                (click)="removeDomain(i)"
+                *ngIf="domainsArray.length > 1"
+                aria-label="Remove domain">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+
+            <button type="button" mat-stroked-button color="primary" (click)="addDomain()" class="add-domain-button">
+              <mat-icon>add</mat-icon> Add Domain
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button type="button" mat-button (click)="cancel()">Cancel</button>
+        <button type="submit" mat-raised-button color="primary" [disabled]="isSaving">
+          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+          <span *ngIf="!isSaving">{{ isEditMode ? 'Update' : 'Create' }}</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</div>
