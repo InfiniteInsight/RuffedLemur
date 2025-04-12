@@ -30,7 +30,7 @@ const routes: Routes = [
   },
   {
     path: 'certificatesources',
-    loadChildren: () => import('./certificatesources/certificatesources.module').then(m => m.CertificatesourcesModule)
+    loadChildren: () => import('./certificatesources/certificatesources.module').then(m => m.CertificateSourcesModule)
   },
   {
     path: 'plugins',

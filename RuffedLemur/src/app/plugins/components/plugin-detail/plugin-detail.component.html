@@ -1,1 +1,84 @@
-<p>plugin-detail works!</p>
+<div class="plugin-detail-container">
+  <div class="detail-header">
+    <button mat-icon-button (click)="goBack()" aria-label="Back">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Plugin Configuration</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!isLoading && !error && plugin" class="plugin-content">
+    <mat-card class="plugin-info-card">
+      <mat-card-header>
+        <div mat-card-avatar class="plugin-avatar">
+          <mat-icon>extension</mat-icon>
+        </div>
+        <mat-card-title>{{ plugin.name }}</mat-card-title>
+        <mat-card-subtitle>
+          <span class="plugin-type plugin-type-{{plugin.type}}">
+            {{ getPluginTypeLabel(plugin.type) }}
+          </span>
+          <span class="plugin-version">v{{ plugin.version }}</span>
+        </mat-card-subtitle>
+        <div class="plugin-status-toggle">
+          <mat-slide-toggle
+            [checked]="plugin.enabled"
+            (change)="togglePluginStatus()"
+            color="primary">
+            {{ plugin.enabled ? 'Enabled' : 'Disabled' }}
+          </mat-slide-toggle>
+        </div>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="plugin-metadata">
+          <div class="metadata-row" *ngIf="plugin.description">
+            <strong>Description:</strong> {{ plugin.description }}
+          </div>
+          <div class="metadata-row" *ngIf="plugin.author">
+            <strong>Author:</strong> {{ plugin.author }}
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <form [formGroup]="configForm" (ngSubmit)="onSubmit()" class="config-form">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Configuration Options</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div *ngIf="getFormControlKeys().length === 0" class="no-options-message">
+            This plugin has no configurable options.
+          </div>
+
+          <div *ngIf="getFormControlKeys().length > 0" class="form-fields">
+            <div *ngFor="let key of getFormControlKeys()" class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>{{ key | titlecase }}</mat-label>
+                <input matInput [formControlName]="key">
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button type="button" mat-button (click)="goBack()">Cancel</button>
+          <button
+            type="submit"
+            mat-raised-button
+            color="primary"
+            [disabled]="isSaving || configForm.pristine || configForm.invalid">
+            <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+            <span *ngIf="!isSaving">Save Configuration</span>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </form>
+  </div>
+</div>

@@ -1,1 +1,219 @@
-<p>certificatesources-form works!</p>
+<!-- src/app/certificatesources/components/certificate-source-form/certificate-source-form.component.html -->
+
+<div class="source-form-container">
+  <div class="form-header">
+    <button mat-icon-button (click)="cancel()" aria-label="Cancel">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>{{ isEditMode ? 'Edit Certificate Source' : 'Create Certificate Source' }}</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="testSuccess" class="success-message">
+    Connection test successful! The source is properly configured.
+  </div>
+
+  <div *ngIf="testError" class="error-message">
+    {{ testError }}
+  </div>
+
+  <form [formGroup]="sourceForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="source-form">
+    <mat-card>
+      <mat-card-content>
+        <div class="form-section">
+          <h3>Basic Information</h3>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" placeholder="Source name">
+              <mat-error *ngIf="sourceForm.get('name')?.hasError('required')">
+                Name is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" placeholder="Source description" rows="3"></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Source Plugin</mat-label>
+              <mat-select formControlName="plugin">
+                <mat-option *ngFor="let plugin of pluginTypes" [value]="plugin">
+                  {{ getPluginLabel(plugin) }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="sourceForm.get('plugin')?.hasError('required')">
+                Plugin is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-slide-toggle formControlName="active" color="primary">
+              {{ sourceForm.get('active')?.value ? 'Active' : 'Inactive' }}
+            </mat-slide-toggle>
+          </div>
+        </div>
+
+        <div formGroupName="pluginOptions">
+          <!-- AWS ACM Plugin Options -->
+          <div class="form-section" *ngIf="sourceForm.get('plugin')?.value === 'aws-acm'">
+            <h3>AWS ACM Configuration</h3>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>AWS Region</mat-label>
+                <input matInput formControlName="awsRegion" placeholder="e.g., us-east-1">
+                <mat-error *ngIf="sourceForm.get('pluginOptions.awsRegion')?.hasError('required')">
+                  AWS Region is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="form-row form-row-multi">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>AWS Access Key</mat-label>
+                <input matInput formControlName="awsAccessKey" placeholder="AWS Access Key">
+                <mat-error *ngIf="sourceForm.get('pluginOptions.awsAccessKey')?.hasError('required')">
+                  AWS Access Key is required
+                </mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>AWS Secret Key</mat-label>
+                <input matInput formControlName="awsSecretKey" type="password" placeholder="AWS Secret Key">
+                <mat-hint *ngIf="isEditMode">Leave blank to keep the existing secret key</mat-hint>
+                <mat-error *ngIf="sourceForm.get('pluginOptions.awsSecretKey')?.hasError('required')">
+                  AWS Secret Key is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- DigiCert, Entrust, Verisign Plugin Options -->
+          <div class="form-section" *ngIf="['digicert', 'entrust', 'verisign'].includes(sourceForm.get('plugin')?.value)">
+            <h3>{{ getPluginLabel(sourceForm.get('plugin')?.value) }} Configuration</h3>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>API Key</mat-label>
+                <input matInput formControlName="apiKey" type="password" placeholder="API Key">
+                <mat-hint *ngIf="isEditMode">Leave blank to keep the existing API key</mat-hint>
+                <mat-error *ngIf="sourceForm.get('pluginOptions.apiKey')?.hasError('required')">
+                  API Key is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>API Endpoint</mat-label>
+                <input matInput formControlName="apiEndpoint" placeholder="API Endpoint URL">
+                <mat-error *ngIf="sourceForm.get('pluginOptions.apiEndpoint')?.hasError('required')">
+                  API Endpoint is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Let's Encrypt Plugin Options -->
+          <div class="form-section" *ngIf="sourceForm.get('plugin')?.value === 'lets-encrypt'">
+            <h3>Let's Encrypt Configuration</h3>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>ACME Directory URL</mat-label>
+                <input matInput formControlName="acmeDirectory" placeholder="e.g., https://acme-v02.api.letsencrypt.org/directory">
+                <mat-error *ngIf="sourceForm.get('pluginOptions.acmeDirectory')?.hasError('required')">
+                  ACME Directory URL is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Account Email</mat-label>
+                <input matInput formControlName="acmeEmail" placeholder="Email address for Let's Encrypt account">
+                <mat-error *ngIf="sourceForm.get('pluginOptions.acmeEmail')?.hasError('required')">
+                  Account Email is required
+                </mat-error>
+                <mat-error *ngIf="sourceForm.get('pluginOptions.acmeEmail')?.hasError('email')">
+                  Please enter a valid email address
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Vault Plugin Options -->
+          <div class="form-section" *ngIf="sourceForm.get('plugin')?.value === 'vault'">
+            <h3>Vault Configuration</h3>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Vault URL</mat-label>
+                <input matInput formControlName="vaultUrl" placeholder="e.g., https://vault.example.com:8200">
+                <mat-error *ngIf="sourceForm.get('pluginOptions.vaultUrl')?.hasError('required')">
+                  Vault URL is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Vault Token</mat-label>
+                <input matInput formControlName="vaultToken" type="password" placeholder="Vault Token">
+                <mat-hint *ngIf="isEditMode">Leave blank to keep the existing token</mat-hint>
+                <mat-error *ngIf="sourceForm.get('pluginOptions.vaultToken')?.hasError('required')">
+                  Vault Token is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Vault Path</mat-label>
+                <input matInput formControlName="vaultPath" placeholder="e.g., secret/certificates">
+                <mat-error *ngIf="sourceForm.get('pluginOptions.vaultPath')?.hasError('required')">
+                  Vault Path is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Custom Plugin Options -->
+          <div class="form-section" *ngIf="sourceForm.get('plugin')?.value === 'custom'">
+            <h3>Custom Configuration</h3>
+            <p class="note-text">Define the specific configuration parameters required for your custom certificate source.</p>
+            <div formGroupName="customFields" class="custom-fields-container">
+              <!-- Custom fields would be dynamically added here in a more complete implementation -->
+              <p class="helper-text">You may need to define custom fields specific to your integration. Please consult your source provider documentation.</p>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button
+          type="button"
+          mat-button
+          color="accent"
+          (click)="testConfiguration()"
+          [disabled]="isTesting || sourceForm.invalid">
+          <mat-spinner diameter="20" *ngIf="isTesting"></mat-spinner>
+          <span *ngIf="!isTesting">Test Connection</span>
+        </button>
+        <button type="button" mat-button (click)="cancel()">Cancel</button>
+        <button
+          type="submit"
+          mat-raised-button
+          color="primary"
+          [disabled]="isSaving || sourceForm.invalid">
+          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+          <span *ngIf="!isSaving">{{ isEditMode ? 'Update' : 'Create' }}</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</div>

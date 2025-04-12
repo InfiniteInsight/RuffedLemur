@@ -4,6 +4,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { Certificate } from '../../../shared/models/certificate.model';
 import { CertificateService } from '../../services/certificate.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-certificate-list',
@@ -13,8 +14,11 @@ import { ErrorService } from '../../../core/services/error/error.service';
 export class CertificateListComponent implements OnInit {
   certificates: Certificate[] = [];
   displayedColumns: string[] = ['name', 'commonName', 'san', 'notAfter', 'issuer', 'status', 'owner', 'team', 'fingerprint', 'actions'];
+
+  //loading and error state
   isLoading = true;
-  error = '';
+  loadingError = '';
+  showRetry = false;
 
   // Pagination
   totalItems = 0;
@@ -36,21 +40,28 @@ export class CertificateListComponent implements OnInit {
 
   loadCertificates(): void {
     this.isLoading = true;
+    this.loadingError = '';
+    this.showRetry = false;
 
     this.certificateService.getCertificates({
       page: this.currentPage,
       size: this.pageSize,
       filter: this.filterText
-    }).subscribe({
+    })
+    .pipe(
+      finalize(() => this.isLoading = false)
+    )
+    .subscribe({
       next: (data) => {
         this.certificates = data.items;
         this.totalItems = data.total;
-        this.isLoading = false;
+        //this.isLoading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load certificates';
-        this.errorService.logError(err);
-        this.isLoading = false;
+        this.loadingError = 'Failed to load certificates';
+        this.showRetry = true;
+        this.errorService.handleError(err, 'loading certificates');
+        //this.isLoading = false;
       }
     });
   }
@@ -110,9 +121,13 @@ export class CertificateListComponent implements OnInit {
         a.remove();
       },
       error: (err) => {
-        this.errorService.logError(err);
-        //TO DO: Show an error notification here
-      }
+        this.loadingError = 'Failed to export certificates';
+        this.showRetry = true;
+        this.errorService.handleError(err, 'export certificates');
+        //this.isLoading = false;
+      },
+
+
     });
   }
 
@@ -125,12 +140,21 @@ export class CertificateListComponent implements OnInit {
           this.loadCertificates();
         },
         error: (err) => {
-          this.errorService.logError(err);
-          // Show an error notification
+          this.loadingError = 'Failed to revoke certificates';
+          this.showRetry = true;
+          this.errorService.handleError(err, 'revoke certificates');
+          //this.isLoading = false;
         }
       });
     }
   }
 
+  retryLoading(): void {
+    this.loadCertificates();
+  }
+
+  dismissError(): void {
+    this.loadingError = '';
+  }
 
 }

@@ -1,0 +1,67 @@
+<div class="report-list-container">
+  <div class="list-header">
+    <h1>Generated Reports</h1>
+    <button mat-raised-button color="primary" routerLink="/notifications/reports/new">
+      <mat-icon>add</mat-icon> Generate New Report
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <mat-card *ngIf="!isLoading && !error">
+    <mat-card-content>
+      <div *ngIf="reports.length === 0" class="no-data-message">
+        No reports have been generated yet.
+      </div>
+
+      <table mat-table [dataSource]="reports" class="reports-table" *ngIf="reports.length > 0">
+        <!-- Filename Column -->
+        <ng-container matColumnDef="filename">
+          <th mat-header-cell *matHeaderCellDef>Filename</th>
+          <td mat-cell *matCellDef="let report">{{ report.filename }}</td>
+        </ng-container>
+
+        <!-- Count Column -->
+        <ng-container matColumnDef="count">
+          <th mat-header-cell *matHeaderCellDef>Records</th>
+          <td mat-cell *matCellDef="let report">{{ report.count }}</td>
+        </ng-container>
+
+        <!-- Sent Column -->
+        <ng-container matColumnDef="sent">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let report">
+            <span *ngIf="report.sent" class="status-sent">
+              <mat-icon class="status-icon">check_circle</mat-icon> Sent to {{ report.recipients?.join(', ') }}
+            </span>
+            <span *ngIf="!report.sent" class="status-not-sent">
+              <mat-icon class="status-icon">save</mat-icon> Generated Only
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let report">
+            <button mat-icon-button color="primary"
+              *ngIf="report.url"
+              (click)="downloadReport(getReportIdFromUrl(report.url), report.filename)"
+              matTooltip="Download Report">
+              <mat-icon>download</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+</div>

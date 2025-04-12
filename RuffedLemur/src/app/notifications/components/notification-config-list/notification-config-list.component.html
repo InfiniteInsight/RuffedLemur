@@ -1,0 +1,115 @@
+<div class="config-list-container">
+  <div class="list-header">
+    <h1>Notification Settings</h1>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" routerLink="/notifications/configs/new">
+        <mat-icon>add</mat-icon> New Configuration
+      </button>
+      <button mat-raised-button routerLink="/notifications">
+        <mat-icon>arrow_back</mat-icon> Back to Notifications
+      </button>
+    </div>
+  </div>
+
+  <mat-card>
+    <mat-card-content>
+      <!-- Filter -->
+      <div class="filter-section">
+        <div class="filter-inputs">
+          <mat-form-field appearance="outline" class="filter-input">
+            <mat-label>Filter</mat-label>
+            <input matInput [(ngModel)]="filterText" placeholder="Search by name or description">
+            <button *ngIf="filterText" matSuffix mat-icon-button aria-label="Clear" (click)="clearFilter()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-select">
+            <mat-label>Plugin Type</mat-label>
+            <mat-select [(value)]="selectedPlugin" (selectionChange)="filterByPlugin(selectedPlugin)">
+              <mat-option [value]="null">All Plugins</mat-option>
+              <mat-option *ngFor="let plugin of pluginTypes" [value]="plugin">
+                {{ plugin }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <button mat-raised-button color="primary" (click)="applyFilter()">
+          <mat-icon>search</mat-icon> Search
+        </button>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div *ngIf="isLoading" class="loading-container">
+        <mat-spinner></mat-spinner>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+
+      <!-- Table -->
+      <div *ngIf="!isLoading && !error" class="table-container">
+        <table mat-table [dataSource]="configs" class="config-table">
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let config">{{ config.name }}</td>
+          </ng-container>
+
+          <!-- Plugin Column -->
+          <ng-container matColumnDef="plugin">
+            <th mat-header-cell *matHeaderCellDef>Plugin</th>
+            <td mat-cell *matCellDef="let config">{{ config.plugin }}</td>
+          </ng-container>
+
+          <!-- Active Column -->
+          <ng-container matColumnDef="active">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let config">
+              <mat-slide-toggle
+                [checked]="config.active"
+                (change)="toggleActive(config)"
+                color="primary">
+                {{ config.active ? 'Active' : 'Inactive' }}
+              </mat-slide-toggle>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let config">
+              <button mat-icon-button [routerLink]="['/notifications/configs', config.id]" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="deleteConfig(config)" matTooltip="Delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <!-- No Results Message -->
+        <div *ngIf="configs.length === 0" class="no-data-message">
+          No notification configurations found.
+        </div>
+
+        <!-- Paginator -->
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          [pageIndex]="currentPage"
+          (page)="onPageChange($event)"
+          aria-label="Select page">
+        </mat-paginator>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,0 +1,292 @@
+<div class="config-form-container">
+  <div class="form-header">
+    <button mat-icon-button (click)="cancel()" aria-label="Cancel">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>{{ isEditMode ? 'Edit Notification Configuration' : 'Create Notification Configuration' }}</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="testSuccess" class="success-message">
+    Configuration test successful! The notification system is working correctly.
+  </div>
+
+  <div *ngIf="testError" class="error-message">
+    {{ testError }}
+  </div>
+
+  <form [formGroup]="configForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="config-form">
+    <mat-card>
+      <mat-card-content>
+        <div class="form-section">
+          <h3>Basic Information</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" placeholder="Configuration name">
+              <mat-error *ngIf="configForm.get('name')?.hasError('required')">
+                Name is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" placeholder="Configuration description" rows="3"></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Notification Plugin</mat-label>
+              <mat-select formControlName="plugin">
+                <mat-option *ngFor="let plugin of pluginTypes" [value]="plugin">
+                  {{ plugin }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="configForm.get('plugin')?.hasError('required')">
+                Plugin is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <h4>Notification Intervals (in days)</h4>
+            <p class="hint-text">Certificate expiration notifications will be sent at these intervals before expiration</p>
+
+            <div formArrayName="interval" class="interval-container">
+              <div *ngFor="let interval of intervalArray.controls; let i = index" class="interval-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Days before expiration</mat-label>
+                  <input matInput [formControlName]="i" type="number" min="1" max="365">
+                </mat-form-field>
+
+                <button
+                  type="button"
+                  mat-icon-button
+                  color="warn"
+                  (click)="removeInterval(i)"
+                  *ngIf="intervalArray.length > 1">
+                  <mat-icon>remove_circle</mat-icon>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                mat-stroked-button
+                color="primary"
+                (click)="addInterval()"
+                class="add-interval-button">
+                <mat-icon>add</mat-icon> Add Interval
+              </button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <mat-slide-toggle formControlName="active" color="primary">
+              {{ configForm.get('active')?.value ? 'Active' : 'Inactive' }}
+            </mat-slide-toggle>
+          </div>
+        </div>
+
+        <!-- Email Plugin Options -->
+        <div class="form-section" *ngIf="configForm.get('plugin')?.value === 'email'">
+          <h3>Email Configuration</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>SMTP Server</mat-label>
+              <input matInput formControlName="smtpServer" placeholder="e.g., smtp.gmail.com">
+              <mat-error *ngIf="configForm.get('smtpServer')?.hasError('required')">
+                SMTP server is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row form-row-multi">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>SMTP Port</mat-label>
+              <input matInput formControlName="smtpPort" type="number" placeholder="e.g., 587">
+              <mat-error *ngIf="configForm.get('smtpPort')?.hasError('required')">
+                SMTP port is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row form-row-multi">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>SMTP Username</mat-label>
+              <input matInput formControlName="smtpUser" placeholder="SMTP username">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>SMTP Password</mat-label>
+              <input matInput formControlName="smtpPassword" type="password" placeholder="SMTP password">
+              <mat-hint *ngIf="isEditMode">Leave blank to keep the existing password</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div formGroupName="pluginOptions">
+            <div class="form-row form-row-multi">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Sender Email</mat-label>
+                <input matInput formControlName="senderEmail" placeholder="noreply@example.com">
+                <mat-error *ngIf="configForm.get('pluginOptions.senderEmail')?.hasError('required')">
+                  Sender email is required
+                </mat-error>
+                <mat-error *ngIf="configForm.get('pluginOptions.senderEmail')?.hasError('email')">
+                  Please enter a valid email address
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Sender Name</mat-label>
+                <input matInput formControlName="senderName" placeholder="Certificate Manager">
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slack Plugin Options -->
+        <div class="form-section" *ngIf="configForm.get('plugin')?.value === 'Slack'" formGroupName="pluginOptions">
+          <h3>Slack Configuration</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Webhook URL</mat-label>
+              <input matInput formControlName="webhookUrl" placeholder="https://hooks.slack.com/services/...">
+              <mat-error *ngIf="configForm.get('pluginOptions.webhookUrl')?.hasError('required')">
+                Webhook URL is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Channel</mat-label>
+              <input matInput formControlName="channel" placeholder="#certificates">
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Microsoft Teams Plugin Options -->
+        <div class="form-section" *ngIf="configForm.get('plugin')?.value === 'Microsoft Teams'" formGroupName="pluginOptions">
+          <h3>Microsoft Teams Configuration</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Webhook URL</mat-label>
+              <input matInput formControlName="teamsWebhookUrl" placeholder="https://outlook.office.com/webhook/...">
+              <mat-error *ngIf="configForm.get('pluginOptions.teamsWebhookUrl')?.hasError('required')">
+                Teams webhook URL is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Webhook Plugin Options -->
+        <div class="form-section" *ngIf="configForm.get('plugin')?.value === 'webhook'" formGroupName="pluginOptions">
+          <h3>Webhook Configuration</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>API URL</mat-label>
+              <input matInput formControlName="apiUrl" placeholder="https://api.example.com/webhook">
+              <mat-error *ngIf="configForm.get('pluginOptions.apiUrl')?.hasError('required')">
+                API URL is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>API Key (Optional)</mat-label>
+              <input matInput formControlName="apiKey" placeholder="API key or token">
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- SMS Plugin Options -->
+        <div class="form-section" *ngIf="configForm.get('plugin')?.value === 'sms'" formGroupName="pluginOptions">
+          <h3>SMS Configuration</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>SMS Provider</mat-label>
+              <mat-select formControlName="smsProvider">
+                <mat-option value="twilio">Twilio</mat-option>
+                <mat-option value="aws-sns">AWS SNS</mat-option>
+                <mat-option value="custom">Custom</mat-option>
+              </mat-select>
+              <mat-error *ngIf="configForm.get('pluginOptions.smsProvider')?.hasError('required')">
+                SMS provider is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <h4>Phone Numbers</h4>
+
+            <div formArrayName="phoneNumbers" class="phone-container">
+              <div *ngFor="let phone of phoneNumbersArray.controls; let i = index" class="phone-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Phone Number</mat-label>
+                  <input matInput [formControlName]="i" placeholder="+1234567890">
+                </mat-form-field>
+
+                <button
+                  type="button"
+                  mat-icon-button
+                  color="warn"
+                  (click)="removePhoneNumber(i)">
+                  <mat-icon>remove_circle</mat-icon>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                mat-stroked-button
+                color="primary"
+                (click)="addPhoneNumber()"
+                class="add-phone-button">
+                <mat-icon>add</mat-icon> Add Phone Number
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button
+          type="button"
+          mat-button
+          color="accent"
+          (click)="testConfiguration()"
+          [disabled]="isTesting || configForm.invalid">
+          <mat-spinner diameter="20" *ngIf="isTesting"></mat-spinner>
+          <span *ngIf="!isTesting">Test Configuration</span>
+        </button>
+
+        <button type="button" mat-button (click)="cancel()">Cancel</button>
+
+        <button
+          type="submit"
+          mat-raised-button
+          color="primary"
+          [disabled]="isSaving || configForm.invalid">
+          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+          <span *ngIf="!isSaving">{{ isEditMode ? 'Update' : 'Create' }}</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</div>
