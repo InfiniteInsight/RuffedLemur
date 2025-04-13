@@ -1,5 +1,3 @@
-// src/app/core/models/auth.model.ts
-
 export interface LoginCredentials {
   username: string;
   password: string;
@@ -7,15 +5,7 @@ export interface LoginCredentials {
 
 export interface AuthResponse {
   token: string;
-  refreshToken?: string;
-  expiry?: string;  // ISO date string for token expiration
   user: UserInfo;
-}
-
-export interface TokenResponse {
-  token: string;
-  refreshToken?: string;
-  expiry?: string;
 }
 
 export interface UserInfo {
@@ -26,9 +16,12 @@ export interface UserInfo {
   firstName?: string;
   lastName?: string;
   active: boolean;
+  department?: string;
+  title?: string;
+
 }
 
-// For future SSO support
+//TO DO: To implement SSO
 export interface SSOConfig {
   provider: string;
   clientId: string;

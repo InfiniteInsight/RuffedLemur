@@ -1,4 +1,3 @@
-// src/app/shared/models/admin.model.ts
 export interface User {
   id?: number;
   username: string;

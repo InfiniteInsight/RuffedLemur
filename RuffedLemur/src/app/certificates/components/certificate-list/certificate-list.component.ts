@@ -59,9 +59,9 @@ export class CertificateListComponent implements OnInit {
       },
       error: (err) => {
         this.loadingError = 'Failed to load certificates';
-        this.showRetry = true;
         this.errorService.handleError(err, 'loading certificates');
-        //this.isLoading = false;
+        this.isLoading = false;
+        this.showRetry = true;
       }
     });
   }
@@ -122,9 +122,9 @@ export class CertificateListComponent implements OnInit {
       },
       error: (err) => {
         this.loadingError = 'Failed to export certificates';
-        this.showRetry = true;
         this.errorService.handleError(err, 'export certificates');
-        //this.isLoading = false;
+        this.isLoading = false;
+        this.showRetry = true;
       },
 
 
@@ -141,9 +141,9 @@ export class CertificateListComponent implements OnInit {
         },
         error: (err) => {
           this.loadingError = 'Failed to revoke certificates';
-          this.showRetry = true;
           this.errorService.handleError(err, 'revoke certificates');
-          //this.isLoading = false;
+          this.isLoading = false;
+          this.showRetry = true;
         }
       });
     }

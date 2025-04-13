@@ -1,18 +1,20 @@
 // src/app/certificates/services/certificate.service.ts
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { Certificate } from '../../shared/models/certificate.model';
 
-interface PaginatedResponse<T> {
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Certificate } from '../../shared/models/certificate.model';
+import { ApiService } from '../../core/services/api/api.service';
+import { ErrorService } from '../../core/services/error/error.service';
+
+export interface PaginatedResponse<T> {
   items: T[];
   total: number;
   page: number;
   size: number;
 }
 
-interface CertificateListParams {
+export interface CertificateListParams {
   page?: number;
   size?: number;
   filter?: string;
@@ -23,55 +25,84 @@ interface CertificateListParams {
 @Injectable({
   providedIn: 'root'
 })
-export class CertificateService {
-  private apiUrl = `${environment.apiUrl}/certificates`;
+export class CertificateService extends ApiService {
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    protected override http: HttpClient,
+    protected override errorService: ErrorService
+  ) {
+    super(http, errorService);
+  }
 
+  /**
+   * Get certificates with pagination and filtering
+   */
   getCertificates(params: CertificateListParams = {}): Observable<PaginatedResponse<Certificate>> {
-    let httpParams = new HttpParams();
-
-    if (params.page !== undefined) {
-      httpParams = httpParams.set('page', params.page.toString());
-    }
-
-    if (params.size !== undefined) {
-      httpParams = httpParams.set('size', params.size.toString());
-    }
-
-    if (params.filter) {
-      httpParams = httpParams.set('filter', params.filter);
-    }
-
-    if (params.sort) {
-      httpParams = httpParams.set('sort', params.sort);
-      if (params.order) {
-        httpParams = httpParams.set('order', params.order);
-      }
-    }
-
-    return this.http.get<PaginatedResponse<Certificate>>(this.apiUrl, { params: httpParams });
+    return this.get<PaginatedResponse<Certificate>>('certificates', params);
   }
 
+  /**
+   * Get a single certificate by ID
+   */
   getCertificate(id: number): Observable<Certificate> {
-    return this.http.get<Certificate>(`${this.apiUrl}/${id}`);
+    return this.get<Certificate>(`certificates/${id}`);
   }
 
+  /**
+   * Create a new certificate
+   */
   createCertificate(certificate: Partial<Certificate>): Observable<Certificate> {
-    return this.http.post<Certificate>(this.apiUrl, certificate);
+    return this.post<Certificate>('certificates', certificate);
   }
 
+  /**
+   * Update an existing certificate
+   */
   updateCertificate(id: number, certificate: Partial<Certificate>): Observable<Certificate> {
-    return this.http.put<Certificate>(`${this.apiUrl}/${id}`, certificate);
+    return this.put<Certificate>(`certificates/${id}`, certificate);
   }
 
+  /**
+   * Revoke a certificate
+   */
   revokeCertificate(id: number, reason: string): Observable<Certificate> {
-    return this.http.post<Certificate>(`${this.apiUrl}/${id}/revoke`, { reason });
+    return this.post<Certificate>(`certificates/${id}/revoke`, { reason });
   }
 
+  /**
+   * Export a certificate in the specified format
+   */
   exportCertificate(id: number, format: 'pem' | 'der' | 'pkcs12'): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/${id}/export/${format}`, {
+    return this.get<Blob>(`certificates/${id}/export/${format}`, {}, {
       responseType: 'blob'
     });
+  }
+
+  /**
+   * Get all certificate providers
+   */
+  getCertificateProviders(): Observable<string[]> {
+    return this.get<string[]>('certificates/providers');
+  }
+
+  /**
+   * Get certificate statistics
+   */
+  getCertificateStats(): Observable<any> {
+    return this.get<any>('certificates/stats', {}, { background: true });
+  }
+
+  /**
+   * Get certificates expiring soon
+   */
+  getExpiringCertificates(days: number = 30): Observable<Certificate[]> {
+    return this.get<Certificate[]>('certificates/expiring', { days });
+  }
+
+  /**
+   * Get certificates by authority
+   */
+  getCertificatesByAuthority(authorityId: number): Observable<Certificate[]> {
+    return this.get<Certificate[]>(`certificates/by-authority/${authorityId}`);
   }
 }

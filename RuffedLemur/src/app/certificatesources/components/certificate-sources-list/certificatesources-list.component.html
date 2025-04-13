@@ -1,17 +1,11 @@
+<!-- src/app/certificatesources/components/certificate-source-list/certificate-source-list.component.html -->
+
 <div class="source-list-container">
   <div class="list-header">
     <h1>Certificate Sources</h1>
     <button mat-raised-button color="primary" routerLink="/certificatesources/new">
       <mat-icon>add</mat-icon> New Source
     </button>
-  </div>
-
-  <div *ngIf="importSuccess" class="success-message">
-    Certificates imported successfully!
-  </div>
-
-  <div *ngIf="importError" class="error-message">
-    {{ importError }}
   </div>
 
   <mat-card>
@@ -26,23 +20,20 @@
               <mat-icon>close</mat-icon>
             </button>
           </mat-form-field>
-
           <div class="plugin-filters">
             <button mat-stroked-button
-                    [class.active]="selectedPlugin === null"
-                    (click)="filterByPlugin(null)">
+              [class.active]="selectedPlugin === null"
+              (click)="filterByPlugin(null)">
               All Plugins
             </button>
-
             <button *ngFor="let plugin of pluginTypes"
-                    mat-stroked-button
-                    [class.active]="selectedPlugin === plugin"
-                    (click)="filterByPlugin(plugin)">
+              mat-stroked-button
+              [class.active]="selectedPlugin === plugin"
+              (click)="filterByPlugin(plugin)">
               {{ getPluginLabel(plugin) }}
             </button>
           </div>
         </div>
-
         <button mat-raised-button color="primary" (click)="applyFilter()">
           <mat-icon>search</mat-icon> Search
         </button>
@@ -95,16 +86,25 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let source">
-              <button mat-icon-button [routerLink]="['/certificatesources', source.id]" matTooltip="Edit Source">
+              <button mat-icon-button (click)="viewDetails(source)" matTooltip="View/Edit Source">
                 <mat-icon>edit</mat-icon>
               </button>
 
-              <button mat-icon-button color="primary" (click)="importCertificates(source)"
-                      [disabled]="isImporting || !source.active" matTooltip="Import Certificates">
-                <mat-icon>cloud_download</mat-icon>
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="importCertificates(source)"
+                [disabled]="importingSourceId === source.id || !source.active"
+                matTooltip="Import Certificates">
+                <mat-spinner *ngIf="importingSourceId === source.id" diameter="20"></mat-spinner>
+                <mat-icon *ngIf="importingSourceId !== source.id">cloud_download</mat-icon>
               </button>
 
-              <button mat-icon-button color="warn" (click)="deleteSource(source)" matTooltip="Delete Source">
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="deleteSource(source)"
+                matTooltip="Delete Source">
                 <mat-icon>delete</mat-icon>
               </button>
             </td>

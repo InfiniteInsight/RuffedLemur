@@ -17,10 +17,16 @@ export class CertificateFormComponent implements OnInit {
   certificateForm: FormGroup;
   authorities: Authority[] = [];
   certificateId: number | null = null;
+
+  //Loading, error, edit, save state
   isEditMode = false;
-  isLoading = false;
   isSaving = false;
-  error = '';
+  isLoading = false;
+  showRetry = false;
+  //error = '';
+  loadingError = ''
+  savingError = ''
+
 
   constructor(
     private fb: FormBuilder,
@@ -84,8 +90,9 @@ export class CertificateFormComponent implements OnInit {
         this.authorities = data;
       },
       error: (err: any) => {
-        this.error = 'Failed to load certificate authorities';
-        this.errorService.logError(err);
+        this.loadingError = 'Failed to load certificate authorities';
+        this.errorService.handleError(err, 'loading certificate authorities');
+        this.showRetry = true;
       }
     });
   }
@@ -124,9 +131,10 @@ export class CertificateFormComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load certificate details';
-        this.errorService.logError(err);
+        this.loadingError = 'Failed to load certificate details';
+        this.errorService.handleError(err,'loading certificates');
         this.isLoading = false;
+        this.showRetry = true;
       }
     });
   }
@@ -154,9 +162,10 @@ export class CertificateFormComponent implements OnInit {
         this.router.navigate(['/certificates', data.id]);
       },
       error: (err) => {
-        this.error = 'Failed to save certificate';
-        this.errorService.logError(err);
+        this.savingError = 'Failed to save certificate';
+        this.errorService.handleError(err, 'saving certificates');
         this.isSaving = false;
+        this.showRetry = true;
       }
     });
   }

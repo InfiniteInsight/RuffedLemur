@@ -1,0 +1,178 @@
+<!-- src/app/certificatesources/components/certificate-source-form/certificate-source-form.component.html -->
+
+<div class="source-form-container">
+  <div class="form-header">
+    <button mat-icon-button (click)="cancel()" aria-label="Cancel">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>{{ isEditMode ? 'Edit Certificate Source' : 'Create Certificate Source' }}</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="testSuccess" class="success-message">
+    Connection test successful! The source is properly configured.
+  </div>
+
+  <div *ngIf="testError" class="error-message">
+    {{ testError }}
+  </div>
+
+  <form [formGroup]="sourceForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="source-form">
+    <mat-card>
+      <mat-card-content>
+        <div class="form-section">
+          <h3>Basic Information</h3>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" placeholder="Source name">
+              <mat-error *ngIf="sourceForm.get('name')?.hasError('required')">
+                Name is required
+              </mat-error>
+              <mat-error *ngIf="sourceForm.get('name')?.hasError('minlength')">
+                Name must be at least 3 characters
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" placeholder="Source description" rows="3"></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Source Plugin</mat-label>
+              <mat-select formControlName="plugin">
+                <mat-option *ngFor="let plugin of pluginTypes" [value]="plugin">
+                  {{ getPluginLabel(plugin) }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="sourceForm.get('plugin')?.hasError('required')">
+                Plugin is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-slide-toggle formControlName="active" color="primary">
+              {{ sourceForm.get('active')?.value ? 'Active' : 'Inactive' }}
+            </mat-slide-toggle>
+          </div>
+        </div>
+
+        <!-- Dynamic Plugin Options -->
+        <div formGroupName="pluginOptions" *ngIf="currentPluginSchema" class="form-section">
+          <h3>Plugin Configuration</h3>
+
+          <ng-container *ngFor="let prop of currentPluginSchema.properties | keyvalue">
+            <div class="form-row" *ngIf="prop.key !== 'type'">
+              <!-- Text Input -->
+              <mat-form-field appearance="outline" class="form-field" *ngIf="getPropertyType(prop.key) === 'text'">
+                <mat-label>{{ getSchemaPropertyLabel(prop.key) }}</mat-label>
+                <input matInput [formControlName]="prop.key" [placeholder]="getSchemaPropertyLabel(prop.key)">
+                <mat-hint *ngIf="getSchemaPropertyDescription(prop.key)">{{ getSchemaPropertyDescription(prop.key) }}</mat-hint>
+                <mat-error *ngIf="sourceForm.get('pluginOptions')?.get(prop.key)?.hasError('required')">
+                  {{ getSchemaPropertyLabel(prop.key) }} is required
+                </mat-error>
+              </mat-form-field>
+
+              <!-- Password Input -->
+              <mat-form-field appearance="outline" class="form-field" *ngIf="getPropertyType(prop.key) === 'password'">
+                <mat-label>{{ getSchemaPropertyLabel(prop.key) }}</mat-label>
+                <input matInput [formControlName]="prop.key" [placeholder]="getSchemaPropertyLabel(prop.key)" type="password">
+                <mat-hint *ngIf="getSchemaPropertyDescription(prop.key)">{{ getSchemaPropertyDescription(prop.key) }}</mat-hint>
+                <mat-error *ngIf="sourceForm.get('pluginOptions')?.get(prop.key)?.hasError('required')">
+                  {{ getSchemaPropertyLabel(prop.key) }} is required
+                </mat-error>
+              </mat-form-field>
+
+              <!-- Email Input -->
+              <mat-form-field appearance="outline" class="form-field" *ngIf="getPropertyType(prop.key) === 'email'">
+                <mat-label>{{ getSchemaPropertyLabel(prop.key) }}</mat-label>
+                <input matInput [formControlName]="prop.key" [placeholder]="getSchemaPropertyLabel(prop.key)" type="email">
+                <mat-hint *ngIf="getSchemaPropertyDescription(prop.key)">{{ getSchemaPropertyDescription(prop.key) }}</mat-hint>
+                <mat-error *ngIf="sourceForm.get('pluginOptions')?.get(prop.key)?.hasError('required')">
+                  {{ getSchemaPropertyLabel(prop.key) }} is required
+                </mat-error>
+                <mat-error *ngIf="sourceForm.get('pluginOptions')?.get(prop.key)?.hasError('email')">
+                  Please enter a valid email
+                </mat-error>
+              </mat-form-field>
+
+              <!-- Number Input -->
+              <mat-form-field appearance="outline" class="form-field" *ngIf="getPropertyType(prop.key) === 'number'">
+                <mat-label>{{ getSchemaPropertyLabel(prop.key) }}</mat-label>
+                <input matInput [formControlName]="prop.key" [placeholder]="getSchemaPropertyLabel(prop.key)" type="number">
+                <mat-hint *ngIf="getSchemaPropertyDescription(prop.key)">{{ getSchemaPropertyDescription(prop.key) }}</mat-hint>
+                <mat-error *ngIf="sourceForm.get('pluginOptions')?.get(prop.key)?.hasError('required')">
+                  {{ getSchemaPropertyLabel(prop.key) }} is required
+                </mat-error>
+                <mat-error *ngIf="sourceForm.get('pluginOptions')?.get(prop.key)?.hasError('min')">
+                  Value is too small
+                </mat-error>
+                <mat-error *ngIf="sourceForm.get('pluginOptions')?.get(prop.key)?.hasError('max')">
+                  Value is too large
+                </mat-error>
+              </mat-form-field>
+
+              <!-- Boolean Input -->
+              <div class="form-row" *ngIf="getPropertyType(prop.key) === 'boolean'">
+                <mat-slide-toggle [formControlName]="prop.key" color="primary">
+                  {{ getSchemaPropertyLabel(prop.key) }}
+                </mat-slide-toggle>
+                <div class="hint-text" *ngIf="getSchemaPropertyDescription(prop.key)">
+                  {{ getSchemaPropertyDescription(prop.key) }}
+                </div>
+              </div>
+
+              <!-- Enum Input -->
+              <mat-form-field appearance="outline" class="form-field" *ngIf="getPropertyType(prop.key) === 'enum'">
+                <mat-label>{{ getSchemaPropertyLabel(prop.key) }}</mat-label>
+                <mat-select [formControlName]="prop.key">
+                  <mat-option *ngFor="let option of getPropertyEnum(prop.key)" [value]="option">
+                    {{ option }}
+                  </mat-option>
+                </mat-select>
+                <mat-hint *ngIf="getSchemaPropertyDescription(prop.key)">{{ getSchemaPropertyDescription(prop.key) }}</mat-hint>
+                <mat-error *ngIf="sourceForm.get('pluginOptions')?.get(prop.key)?.hasError('required')">
+                  {{ getSchemaPropertyLabel(prop.key) }} is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </ng-container>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button
+          type="button"
+          mat-button
+          color="accent"
+          (click)="testConfiguration()"
+          [disabled]="isTesting || sourceForm.invalid">
+          <mat-spinner diameter="20" *ngIf="isTesting"></mat-spinner>
+          <span *ngIf="!isTesting">Test Configuration</span>
+        </button>
+        <button type="button" mat-button (click)="cancel()">Cancel</button>
+        <button
+          type="submit"
+          mat-raised-button
+          color="primary"
+          [disabled]="isSaving || sourceForm.invalid">
+          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+          <span *ngIf="!isSaving">{{ isEditMode ? 'Update' : 'Create' }}</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</div>

@@ -18,10 +18,14 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRadioModule } from '@angular/material/radio';
 
 // Components
-import { CertificateSourceListComponent } from './components/certificate-source-list/certificate-source-list.component';
-import { CertificateSourceFormComponent } from './components/certificate-source-form/certificate-source-form.component';
+import { CertificateSourceListComponent } from './components/certificate-sources-list/certificatesources-list.component'
+import { CertificateSourceFormComponent } from './components/certificate-sources-form/certificatesources-form.component'
+import { CertificateSourceDetailComponent } from './components/certificate-sources-detail/certificatesources-detail.component';
 
 // Guards
 import { AuthGuard } from '../core/guards/auth.guard';
@@ -39,15 +43,22 @@ const routes: Routes = [
   },
   {
     path: ':id',
-    component: CertificateSourceFormComponent,
+    component: CertificateSourceDetailComponent,
     canActivate: [AuthGuard]
+  },
+  {
+    path: ':id/edit',
+    component: CertificateSourceFormComponent,
+    canActivate: [AuthGuard],
+    data: { isEdit: true }
   }
 ];
 
 @NgModule({
   declarations: [
     CertificateSourceListComponent,
-    CertificateSourceFormComponent
+    CertificateSourceFormComponent,
+    CertificateSourceDetailComponent
   ],
   imports: [
     CommonModule,
@@ -65,7 +76,10 @@ const routes: Routes = [
     MatMenuModule,
     MatTooltipModule,
     MatSelectModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    MatChipsModule,
+    MatCheckboxModule,
+    MatRadioModule
   ]
 })
 export class CertificateSourcesModule { }

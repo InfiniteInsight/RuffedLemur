@@ -1,0 +1,43 @@
+/* src/app/core/components/unauthorized/unauthorized.component.scss */
+
+.unauthorized-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 20px;
+}
+
+.unauthorized-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 32px;
+  text-align: center;
+  max-width: 500px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.unauthorized-icon {
+  font-size: 64px;
+  height: 64px;
+  width: 64px;
+  color: #f44336;
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+p {
+  margin-bottom: 8px;
+  color: #666;
+}
+
+.action-buttons {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}

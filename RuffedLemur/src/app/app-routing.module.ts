@@ -1,6 +1,8 @@
-import { NgModule } from "@angular/core";
-import { RouterModule, Routes } from "@angular/router";
-import { CertificatesModule } from "./certificates/certificates.module";
+// src/app/app-routing.module.ts
+
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { UnauthorizedComponent } from './core/components/unauthorized/unauthorized.component';
 
 const routes: Routes = [
   {
@@ -45,6 +47,10 @@ const routes: Routes = [
     loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule)
   },
   {
+    path: 'unauthorized',
+    component: UnauthorizedComponent
+  },
+  {
     path: '**',
     redirectTo: 'dashboard'
   }
@@ -54,5 +60,4 @@ const routes: Routes = [
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
-
 export class AppRoutingModule { }
