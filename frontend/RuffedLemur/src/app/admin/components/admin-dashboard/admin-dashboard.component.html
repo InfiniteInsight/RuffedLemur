@@ -1,0 +1,116 @@
+<div class="admin-dashboard-container">
+  <h1 class="page-title">Admin Dashboard</h1>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!isLoading && !error" class="dashboard-content">
+    <!-- Admin Navigation Tiles -->
+    <div class="admin-nav-tiles">
+      <mat-card class="admin-nav-tile" routerLink="/admin/users">
+        <mat-card-content>
+          <mat-icon class="nav-icon">people</mat-icon>
+          <h2>User Management</h2>
+          <p>Manage users, roles, and permissions</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="admin-nav-tile" routerLink="/admin/roles">
+        <mat-card-content>
+          <mat-icon class="nav-icon">security</mat-icon>
+          <h2>Role Management</h2>
+          <p>Manage roles and permissions</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="admin-nav-tile" routerLink="/admin/settings">
+        <mat-card-content>
+          <mat-icon class="nav-icon">settings</mat-icon>
+          <h2>System Settings</h2>
+          <p>Configure application settings</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="admin-nav-tile" routerLink="/admin/logs">
+        <mat-card-content>
+          <mat-icon class="nav-icon">assignment</mat-icon>
+          <h2>System Logs</h2>
+          <p>View application logs and events</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="admin-nav-tile" routerLink="/admin/backup">
+        <mat-card-content>
+          <mat-icon class="nav-icon">backup</mat-icon>
+          <h2>Backup & Restore</h2>
+          <p>Manage system backup and restoration</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- System Information Card -->
+    <mat-card class="system-info-card" *ngIf="systemInfo">
+      <mat-card-header>
+        <mat-card-title>System Information</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-label">Version</div>
+          <div class="info-value">{{ systemInfo.version }}</div>
+
+          <div class="info-label">API Version</div>
+          <div class="info-value">{{ systemInfo.apiVersion }}</div>
+
+          <div class="info-label">Database</div>
+          <div class="info-value">{{ systemInfo.database?.type }} {{ systemInfo.database?.version }}</div>
+
+          <div class="info-label">Uptime</div>
+          <div class="info-value">{{ systemInfo.uptime }}</div>
+
+          <div class="info-label">Active Users</div>
+          <div class="info-value">{{ systemInfo.activeUsers }}</div>
+
+          <div class="info-label">Total Certificates</div>
+          <div class="info-value">{{ systemInfo.totalCertificates }}</div>
+
+          <div class="info-label">System Status</div>
+          <div class="info-value">
+            <span [ngClass]="{'status-healthy': systemInfo.status === 'healthy',
+                             'status-warning': systemInfo.status === 'warning',
+                             'status-error': systemInfo.status === 'error'}">
+              {{ systemInfo.status | titlecase }}
+            </span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Quick Actions Card -->
+    <mat-card class="quick-actions-card">
+      <mat-card-header>
+        <mat-card-title>Quick Actions</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="quick-actions">
+          <button mat-raised-button color="primary" routerLink="/admin/users/new">
+            <mat-icon>person_add</mat-icon> Add User
+          </button>
+          <button mat-raised-button color="accent" routerLink="/admin/roles/new">
+            <mat-icon>add_moderator</mat-icon> Add Role
+          </button>
+          <button mat-raised-button routerLink="/admin/logs">
+            <mat-icon>visibility</mat-icon> View Logs
+          </button>
+          <button mat-raised-button color="warn">
+            <mat-icon>refresh</mat-icon> Restart Services
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,122 @@
+.admin-dashboard-container {
+  padding: 20px;
+}
+
+.page-title {
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  min-height: 300px;
+  align-items: center;
+}
+
+.error-message {
+  color: #f44336;
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: #ffebee;
+  border-radius: 4px;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 24px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-nav-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-nav-tile {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .nav-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    margin-bottom: 16px;
+    color: #3f51b5;
+  }
+
+  h2 {
+    margin: 0 0 8px 0;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 0;
+    color: #666;
+  }
+}
+
+.system-info-card, .quick-actions-card {
+  grid-column: 2;
+
+  @media (max-width: 1024px) {
+    grid-column: 1;
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 8px 16px;
+  margin-top: 16px;
+
+  .info-label {
+    font-weight: 500;
+    color: #666;
+  }
+
+  .status-healthy {
+    color: #4caf50;
+    font-weight: 500;
+  }
+
+  .status-warning {
+    color: #ff9800;
+    font-weight: 500;
+  }
+
+  .status-error {
+    color: #f44336;
+    font-weight: 500;
+  }
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}

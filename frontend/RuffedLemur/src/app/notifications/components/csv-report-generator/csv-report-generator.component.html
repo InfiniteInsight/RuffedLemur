@@ -1,0 +1,161 @@
+<div class="report-generator-container">
+  <div class="page-header">
+    <h1>Generate Certificate Report</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="success" class="success-message">
+    <div class="success-text">{{ success }}</div>
+    <button *ngIf="downloadUrl" mat-raised-button color="accent" (click)="downloadReport()">
+      <mat-icon>download</mat-icon> Download Report
+    </button>
+  </div>
+
+  <form [formGroup]="reportForm" (ngSubmit)="generateReport()" *ngIf="!isLoading" class="report-form">
+    <mat-card>
+      <mat-card-content>
+        <div class="form-section">
+          <h3>Report Configuration</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Report Type</mat-label>
+              <mat-select formControlName="reportType">
+                <mat-option *ngFor="let type of reportTypes" [value]="type.value">
+                  {{ type.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Filename</mat-label>
+              <input matInput formControlName="filename" placeholder="report.csv">
+              <mat-error *ngIf="reportForm.get('filename')?.hasError('required')">
+                Filename is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row" *ngIf="reportForm.get('reportType')?.value === 'expiring-certificates'">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Days Until Expiration</mat-label>
+              <input matInput type="number" formControlName="days" min="1" max="365">
+              <mat-hint>Include certificates expiring within this many days</mat-hint>
+              <mat-error *ngIf="reportForm.get('days')?.hasError('min')">
+                Value must be at least 1
+              </mat-error>
+              <mat-error *ngIf="reportForm.get('days')?.hasError('max')">
+                Value cannot exceed 365
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Filter by Owners</mat-label>
+              <mat-select formControlName="owners" multiple>
+                <mat-option value="user1@example.com">user1@example.com</mat-option>
+                <mat-option value="user2@example.com">user2@example.com</mat-option>
+                <mat-option value="team1">Team 1</mat-option>
+                <mat-option value="team2">Team 2</mat-option>
+              </mat-select>
+              <mat-hint>Leave empty to include all owners</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Filter by Authorities</mat-label>
+              <mat-select formControlName="authorities" multiple>
+                <mat-option *ngFor="let authority of authorities" [value]="authority.id">
+                  {{ authority.name }}
+                </mat-option>
+              </mat-select>
+              <mat-hint>Leave empty to include all authorities</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Report Columns</h3>
+          <p class="hint-text">Select the columns to include in the CSV report</p>
+
+          <div class="columns-grid" formArrayName="columns">
+            <div *ngFor="let column of availableColumns; let i = index" class="column-checkbox">
+              <mat-checkbox [formControlName]="i">
+                {{ column.label }}
+              </mat-checkbox>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Email Configuration</h3>
+
+          <div class="form-row">
+            <mat-slide-toggle formControlName="sendEmail" (change)="updateEmailValidation()">
+              Send report via email
+            </mat-slide-toggle>
+          </div>
+
+          <ng-container formGroupName="emailConfig">
+            <div class="form-row" *ngIf="reportForm.get('sendEmail')?.value">
+              <h4>Recipients</h4>
+
+              <div formArrayName="recipients">
+                <div *ngFor="let recipient of recipientsArray.controls; let i = index" class="recipient-row">
+                  <mat-form-field appearance="outline" class="recipient-field">
+                    <mat-label>Email Address</mat-label>
+                    <input matInput [formControlName]="i" placeholder="email@example.com">
+                    <mat-error *ngIf="recipientsArray.at(i)?.hasError('email')">
+                      Please enter a valid email address
+                    </mat-error>
+                  </mat-form-field>
+
+                  <button type="button" mat-icon-button color="warn" (click)="removeRecipient(i)"
+                    *ngIf="recipientsArray.length > 1" [attr.aria-label]="'Remove recipient ' + (i + 1)">
+                    <mat-icon>remove_circle</mat-icon>
+                  </button>
+                </div>
+
+                <button type="button" mat-stroked-button color="primary" (click)="addRecipient()" class="add-recipient-button">
+                  <mat-icon>add</mat-icon> Add Recipient
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row" *ngIf="reportForm.get('sendEmail')?.value">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Email Subject</mat-label>
+                <input matInput formControlName="subject">
+              </mat-form-field>
+            </div>
+
+            <div class="form-row" *ngIf="reportForm.get('sendEmail')?.value">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Email Body</mat-label>
+                <textarea matInput formControlName="body" rows="4"></textarea>
+              </mat-form-field>
+            </div>
+          </ng-container>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button type="submit" mat-raised-button color="primary" [disabled]="isGenerating">
+          <mat-spinner diameter="20" *ngIf="isGenerating"></mat-spinner>
+          <span *ngIf="!isGenerating">Generate {{ getReportTypeLabel() }} Report</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</div>

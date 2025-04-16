@@ -1,0 +1,74 @@
+<div class="settings-container">
+  <div class="settings-header">
+    <h1>System Settings</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="!isLoading && !error" class="settings-content">
+    <!-- Category Filter -->
+    <mat-card class="filter-card">
+      <mat-card-content>
+        <div class="category-filters">
+          <button mat-stroked-button
+                  [class.active]="selectedCategory === null"
+                  (click)="filterByCategory(null)">
+            All Settings
+          </button>
+
+          <button *ngFor="let category of categories"
+                  mat-stroked-button
+                  [class.active]="selectedCategory === category"
+                  (click)="filterByCategory(category)">
+            {{ getCategoryLabel(category) }}
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Settings Form -->
+    <form [formGroup]="settingsForm" class="settings-form">
+      <mat-card *ngFor="let setting of filteredSettings" class="setting-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>{{ getSettingTypeIcon(setting.value) }}</mat-icon>
+          <mat-card-title>{{ setting.key }}</mat-card-title>
+          <mat-card-subtitle *ngIf="setting.description">{{ setting.description }}</mat-card-subtitle>
+          <div class="category-badge">{{ getCategoryLabel(setting.category) }}</div>
+        </mat-card-header>
+
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="setting-field">
+            <mat-label>Value</mat-label>
+            <input matInput [formControlName]="setting.key">
+            <mat-hint *ngIf="!setting.editable">This setting is not editable</mat-hint>
+          </mat-form-field>
+        </mat-card-content>
+
+        <mat-card-actions *ngIf="setting.editable" align="end">
+          <button mat-button
+                  color="primary"
+                  [disabled]="settingsForm.get(setting.key)?.pristine || isSaving"
+                  (click)="saveSetting(setting)">
+            <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+            <span *ngIf="!isSaving">Save</span>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+
+      <!-- No Settings Message -->
+      <div *ngIf="filteredSettings.length === 0" class="no-settings-message">
+        No settings found for the selected category.
+      </div>
+    </form>
+  </div>
+</div>

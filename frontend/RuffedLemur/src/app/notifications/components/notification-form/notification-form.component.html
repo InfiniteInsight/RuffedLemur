@@ -1,0 +1,147 @@
+<div class="notification-form-container">
+  <div class="form-header">
+    <button mat-icon-button (click)="cancel()" aria-label="Cancel">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Send New Notification</h1>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <form [formGroup]="notificationForm" (ngSubmit)="onSubmit()" class="notification-form">
+    <mat-card>
+      <mat-card-content>
+        <div class="form-section">
+          <h3>Notification Details</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Subject</mat-label>
+              <input matInput formControlName="subject" placeholder="Enter notification subject">
+              <mat-error *ngIf="notificationForm.get('subject')?.hasError('required')">
+                Subject is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Message</mat-label>
+              <textarea matInput formControlName="message" rows="6" placeholder="Enter notification message"></textarea>
+              <mat-error *ngIf="notificationForm.get('message')?.hasError('required')">
+                Message is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row form-row-multi">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Type</mat-label>
+              <mat-select formControlName="type">
+                <mat-option *ngFor="let type of notificationTypes" [value]="type">
+                  {{ type.replace('_', ' ') | titlecase }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Level</mat-label>
+              <mat-select formControlName="level">
+                <mat-option *ngFor="let level of notificationLevels" [value]="level">
+                  {{ level | titlecase }}
+                  <small class="level-description">{{ getLevelDescription(level) }}</small>
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Recipients</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>From Email</mat-label>
+              <input matInput formControlName="fromAddress" placeholder="sender@example.com">
+              <mat-error *ngIf="notificationForm.get('fromAddress')?.hasError('required')">
+                From address is required
+              </mat-error>
+              <mat-error *ngIf="notificationForm.get('fromAddress')?.hasError('email')">
+                Please enter a valid email address
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div formArrayName="toAddress">
+            <div *ngFor="let recipient of toAddressArray.controls; let i = index" class="recipient-row">
+              <mat-form-field appearance="outline" class="recipient-field">
+                <mat-label>Recipient {{ i + 1 }}</mat-label>
+                <input matInput [formControlName]="i" placeholder="recipient@example.com">
+                <mat-error *ngIf="toAddressArray.at(i).hasError('required')">
+                  Recipient email is required
+                </mat-error>
+                <mat-error *ngIf="toAddressArray.at(i).hasError('email')">
+                  Please enter a valid email address
+                </mat-error>
+              </mat-form-field>
+
+              <button
+                type="button"
+                mat-icon-button
+                color="warn"
+                (click)="removeRecipient(i)"
+                *ngIf="toAddressArray.length > 1"
+                aria-label="Remove recipient">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+
+            <button type="button" mat-stroked-button color="primary" (click)="addRecipient()" class="add-recipient-button">
+              <mat-icon>add</mat-icon> Add Recipient
+            </button>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Attachment (Optional)</h3>
+
+          <div class="attachment-row">
+            <button
+              type="button"
+              mat-stroked-button
+              color="primary"
+              (click)="fileInput.click()"
+              *ngIf="!selectedFile"
+              class="file-button">
+              <mat-icon>attach_file</mat-icon> Select File
+            </button>
+
+            <input
+              #fileInput
+              type="file"
+              style="display: none"
+              (change)="onFileSelected($event)">
+
+            <div *ngIf="selectedFile" class="selected-file">
+              <mat-icon>insert_drive_file</mat-icon>
+              <span>{{ selectedFile.name }}</span>
+              <button type="button" mat-icon-button color="warn" (click)="clearFile()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button type="button" mat-button (click)="cancel()">Cancel</button>
+        <button type="submit" mat-raised-button color="primary" [disabled]="isSending">
+          <mat-spinner diameter="20" *ngIf="isSending"></mat-spinner>
+          <span *ngIf="!isSending">Send Notification</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</div>

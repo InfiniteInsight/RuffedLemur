@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./ruffedlemur:/app/ruffedlemur
+    environment:
+      - FLASK_APP=ruffedlemur/app.py
+      - FLASK_ENV=development
+      - DATABASE_URI=postgresql://postgres:736pNSIOwPZa6Ib6MVgi@db:5432/ruffedlemur
+    depends_on:
+      - db
+    command: flask run --host=0.0.0.0
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=736pNSIOwPZa6Ib6MVgi
+      - POSTGRES_DB=ruffedlemur
+    ports:
+      - '5432:5432'
+
+volumes:
+  postgres_data:

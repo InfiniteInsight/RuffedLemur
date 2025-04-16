@@ -1,0 +1,8 @@
+<!-- src/app/core/components/loading/loading.component.html -->
+
+<div class="loading-overlay" *ngIf="loading$ | async">
+  <div class="loading-spinner">
+    <mat-spinner diameter="48"></mat-spinner>
+    <span class="loading-message">Loading...</span>
+  </div>
+</div>

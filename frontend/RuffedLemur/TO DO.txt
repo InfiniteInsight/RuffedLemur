@@ -1,0 +1,21 @@
+TO DO:
+- roll out improved error handling to the rest of the modules.  It has already been implemented on the certificate-list and certificate-form modules.
+- roll out improved loading state across components
+- implement strong validation where appropriate
+- integrate python backend
+- performance optimization:
+    - lazy loading for modules
+    - onpush change detection for optimized component rendering
+    - evaluate virtualization for large data lists
+- ui improvements:
+    - mobile versions
+    - accessibility
+- testing
+  - unit tests
+  - end to end tests
+  - test coverage reporting
+- Documentation
+  - jsdoc
+  - user Documentation
+  - frontend Documentation
+  - backend Documentation

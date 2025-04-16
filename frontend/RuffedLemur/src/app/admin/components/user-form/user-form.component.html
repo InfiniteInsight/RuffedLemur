@@ -1,0 +1,89 @@
+<div class="user-form-container">
+  <div class="form-header">
+    <button mat-icon-button (click)="cancel()" aria-label="Cancel">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>{{ isEditMode ? 'Edit User' : 'Create New User' }}</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="user-form">
+    <mat-card>
+      <mat-card-content>
+        <div class="form-section">
+          <h3>User Information</h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Username</mat-label>
+              <input matInput formControlName="username" placeholder="Enter username" [readonly]="isEditMode">
+              <mat-error *ngIf="userForm.get('username')?.hasError('required')">
+                Username is required
+              </mat-error>
+              <mat-error *ngIf="userForm.get('username')?.hasError('minlength')">
+                Username must be at least 3 characters
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="email" placeholder="Enter email" type="email">
+              <mat-error *ngIf="userForm.get('email')?.hasError('required')">
+                Email is required
+              </mat-error>
+              <mat-error *ngIf="userForm.get('email')?.hasError('email')">
+                Please enter a valid email address
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row form-row-multi">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>First Name</mat-label>
+              <input matInput formControlName="firstName" placeholder="Enter first name">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Last Name</mat-label>
+              <input matInput formControlName="lastName" placeholder="Enter last name">
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Roles</mat-label>
+              <mat-select formControlName="roles" multiple>
+                <mat-option *ngFor="let role of roles" [value]="role.id">
+                  {{ role.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-slide-toggle formControlName="active" color="primary">
+              {{ userForm.get('active')?.value ? 'Active' : 'Inactive' }}
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button type="button" mat-button (click)="cancel()">Cancel</button>
+        <button type="submit" mat-raised-button color="primary" [disabled]="isSaving">
+          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+          <span *ngIf="!isSaving">{{ isEditMode ? 'Update' : 'Create' }}</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</div>

@@ -1,0 +1,134 @@
+<!-- src/app/certificatesources/components/certificate-source-list/certificate-source-list.component.html -->
+
+<div class="source-list-container">
+  <div class="list-header">
+    <h1>Certificate Sources</h1>
+    <button mat-raised-button color="primary" routerLink="/certificatesources/new">
+      <mat-icon>add</mat-icon> New Source
+    </button>
+  </div>
+
+  <mat-card>
+    <mat-card-content>
+      <!-- Filter Controls -->
+      <div class="filter-section">
+        <div class="filter-controls">
+          <mat-form-field appearance="outline" class="filter-input">
+            <mat-label>Filter</mat-label>
+            <input matInput [(ngModel)]="filterText" placeholder="Search by name or description">
+            <button *ngIf="filterText" matSuffix mat-icon-button aria-label="Clear" (click)="clearFilter()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+          <div class="plugin-filters">
+            <button mat-stroked-button
+              [class.active]="selectedPlugin === null"
+              (click)="filterByPlugin(null)">
+              All Plugins
+            </button>
+            <button *ngFor="let plugin of pluginTypes"
+              mat-stroked-button
+              [class.active]="selectedPlugin === plugin"
+              (click)="filterByPlugin(plugin)">
+              {{ getPluginLabel(plugin) }}
+            </button>
+          </div>
+        </div>
+        <button mat-raised-button color="primary" (click)="applyFilter()">
+          <mat-icon>search</mat-icon> Search
+        </button>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div *ngIf="isLoading" class="loading-container">
+        <mat-spinner></mat-spinner>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+
+      <!-- Sources Table -->
+      <div *ngIf="!isLoading && !error" class="table-container">
+        <table mat-table [dataSource]="sources" class="sources-table">
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let source">
+              {{ source.name }}
+              <div class="source-description" *ngIf="source.description">
+                {{ source.description }}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Plugin Column -->
+          <ng-container matColumnDef="plugin">
+            <th mat-header-cell *matHeaderCellDef>Plugin</th>
+            <td mat-cell *matCellDef="let source">{{ getPluginLabel(source.plugin) }}</td>
+          </ng-container>
+
+          <!-- Active Column -->
+          <ng-container matColumnDef="active">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let source">
+              <mat-slide-toggle
+                [checked]="source.active"
+                (change)="toggleSourceStatus(source)"
+                color="primary">
+                {{ source.active ? 'Active' : 'Inactive' }}
+              </mat-slide-toggle>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let source">
+              <button mat-icon-button (click)="viewDetails(source)" matTooltip="View/Edit Source">
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="importCertificates(source)"
+                [disabled]="importingSourceId === source.id || !source.active"
+                matTooltip="Import Certificates">
+                <mat-spinner *ngIf="importingSourceId === source.id" diameter="20"></mat-spinner>
+                <mat-icon *ngIf="importingSourceId !== source.id">cloud_download</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="deleteSource(source)"
+                matTooltip="Delete Source">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <!-- No Results Message -->
+        <div *ngIf="sources.length === 0" class="no-data-message">
+          No certificate sources found.
+        </div>
+
+        <!-- Paginator -->
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          [pageIndex]="currentPage"
+          (page)="onPageChange($event)"
+          aria-label="Select page">
+        </mat-paginator>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
