@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { User } from '../../../shared/models/admin.model';
 import { AdminService } from '../../services/admin.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-user-management',
@@ -28,7 +29,8 @@ export class UserManagementComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private errorService: ErrorService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void {
@@ -53,6 +55,11 @@ export class UserManagementComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  canPerformAction(action: string): boolean {
+    return this.authService.hasRole('ADMIN') ||
+           this.authService.hasPermission(`user:${action}`);
   }
 
   onPageChange(event: PageEvent): void {

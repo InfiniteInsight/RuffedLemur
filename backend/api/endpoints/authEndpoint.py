@@ -104,7 +104,9 @@ def login(login_data):
 
 
 @auth_api.route('/refresh', methods=['POST'])
-@jwt_required(refresh=True)
+#@jwt_required(refresh=True)
+@auth_api.arguments(LoginSchema)
+#@auth_api.response(200, TokenSchema)
 @auth_api.response(200, RefreshTokenSchema)
 def refresh():
     """
@@ -134,7 +136,9 @@ def refresh():
 
 
 @auth_api.route('/me', methods=['GET'])
-@jwt_required()
+#@jwt_required()
+@auth_api.arguments(LoginSchema)
+@auth_api.response(200, TokenSchema)
 def me():
     """
     Get current user information.
@@ -155,7 +159,9 @@ def me():
 
 
 @auth_api.route('/logout', methods=['POST'])
-@jwt_required()
+#@jwt_required()
+@auth_api.arguments(LoginSchema)
+@auth_api.response(200, TokenSchema)
 def logout():
     """
     Logout user.

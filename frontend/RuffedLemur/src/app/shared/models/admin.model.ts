@@ -1,5 +1,5 @@
 export interface User {
-  id?: number;
+  id?: string; //string for uuid compatibility
   username: string;
   email: string;
   firstName?: string;
@@ -7,19 +7,19 @@ export interface User {
   active: boolean;
   roles: Role[];
   apiKey?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Role {
-  id?: number;
+  id?: string;
   name: string;
   description?: string;
   permissions: Permission[];
 }
 
 export interface Permission {
-  id?: number;
+  id?: string;
   name: string;
   description?: string;
 }
@@ -39,4 +39,11 @@ export enum SettingCategory {
   CERTIFICATE = 'certificate',
   NOTIFICATION = 'notification',
   AUTHENTICATION = 'authentication'
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
 }

@@ -200,4 +200,64 @@ register(userData: { username: string, email: string, password: string }): Obser
     })
   );
 }
+
+/**
+ * Check if the current user has a specific role
+ * @param role Role name to check
+ * @returns True if the user has the role, false otherwise
+ */
+hasRole(role: string): boolean {
+  const user = this.getCurrentUser();
+  if (!user || !user.roles) return false;
+
+  // If roles is an array of strings
+  if (Array.isArray(user.roles) && typeof user.roles[0] === 'string') {
+    return user.roles.includes(role);
+  }
+
+  // If roles is an array of objects with name property
+  if (Array.isArray(user.roles) && typeof user.roles[0] === 'object') {
+    return user.roles.some((r: any) => r.name === role);
+  }
+
+  return false;
+}
+
+/**
+ * Check if the current user has a specific permission
+ * @param permission Permission string in format 'resource:action'
+ * @returns True if the user has the permission, false otherwise
+ */
+hasPermission(permission: string): boolean {
+  const user = this.getCurrentUser();
+  if (!user || !user.roles) return false;
+
+  // If user has admin role, grant all permissions
+  if (this.hasRole('admin')) return true;
+
+  // Split permission into resource and action
+  const [resource, action] = permission.split(':');
+  if (!resource || !action) return false;
+
+  // Check each role's permissions
+  return user.roles.some((role: any) => {
+    // Skip if role has no permissions
+    if (!role.permissions) return false;
+
+    // Check if role has the specific permission
+    return role.permissions.some((perm: any) =>
+      perm.resource === resource && perm.action === action
+    );
+  });
+}
+
+/**
+ * Get current user information
+ * @returns Current user or null if not logged in
+ */
+getCurrentUser(): any {
+  return this.currentUserSubject.value;
+}
+
+
 }
