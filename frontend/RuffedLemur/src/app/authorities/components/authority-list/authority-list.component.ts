@@ -1,17 +1,18 @@
+// frontend/RuffedLemur/src/app/authorities/components/authority-list/authority-list.component.ts
 import { Component, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { Authority } from '../../../shared/models/authority.model';
 import { AuthorityService } from '../../services/authority.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-authority-list',
   templateUrl: './authority-list.component.html',
   styleUrls: ['./authority-list.component.scss']
 })
-
 export class AuthorityListComponent implements OnInit {
-
+  // Component properties
   authorities: Authority[] = [];
   displayedColumns: string[] = ['name', 'owner', 'active', 'certificates', 'createdAt', 'actions'];
   isLoading = true;
@@ -23,12 +24,13 @@ export class AuthorityListComponent implements OnInit {
   currentPage = 0;
   pageSizeOptions = [5, 10, 25, 50];
 
-  //filtering
+  // Filtering
   filterText = '';
 
   constructor(
     private authorityService: AuthorityService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private snackBar: MatSnackBar
   ) { }
 
   ngOnInit(): void {
@@ -37,6 +39,7 @@ export class AuthorityListComponent implements OnInit {
 
   loadAuthorities(): void {
     this.isLoading = true;
+    this.error = '';
 
     this.authorityService.getAuthorities({
       page: this.currentPage,
@@ -46,9 +49,11 @@ export class AuthorityListComponent implements OnInit {
       next: (data) => {
         // Handle both paginated and non-paginated responses
         if (Array.isArray(data)) {
+          // If data is a direct array of authorities
           this.authorities = data;
           this.totalItems = data.length;
-        } else if (data && data.items) {
+        } else if (data && 'items' in data && Array.isArray(data.items)) {
+          // If data is a paginated response with items property
           this.authorities = data.items;
           this.totalItems = data.total;
         } else {
@@ -61,8 +66,8 @@ export class AuthorityListComponent implements OnInit {
       },
       error: (err) => {
         this.error = 'Failed to load authorities';
-        this.errorService.logError(err);
         this.isLoading = false;
+        // Error is already handled in the service
       }
     });
   }
@@ -74,19 +79,18 @@ export class AuthorityListComponent implements OnInit {
   }
 
   applyFilter(): void {
-    this.currentPage = 0; //reset to the first page when filtering
+    this.currentPage = 0; // Reset to the first page when filtering
     this.loadAuthorities();
   }
 
   clearFilter(): void {
     this.filterText = '';
     this.applyFilter();
-
   }
 
   exportAuthority(id: number, format: 'pem' | 'der'): void {
-    this.authorityService.exportAuthorityChain(id, format),subscribe({
-      next: (blob: any) => {
+    this.authorityService.exportAuthorityChain(id, format).subscribe({
+      next: (blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -95,29 +99,40 @@ export class AuthorityListComponent implements OnInit {
         a.click();
         window.URL.revokeObjectURL(url);
         a.remove();
+
+        this.snackBar.open(`Authority exported successfully in ${format.toUpperCase()} format`, 'Close', {
+          duration: 3000,
+          panelClass: 'success-snackbar'
+        });
       },
-      error: (err: any) => {
-        this.errorService.logError(err)
+      error: (err) => {
+        this.snackBar.open(`Failed to export authority: ${err.message}`, 'Close', {
+          duration: 5000,
+          panelClass: 'error-snackbar'
+        });
+        // The error service handling is done within the authority service
       }
     });
   }
 
   deleteAuthority(authority: Authority): void {
-    if(confirm(`Are you sure you want to delete "${authority.name}"? This action cannot be undone`)) {
+    if (confirm(`Are you sure you want to delete "${authority.name}"? This action cannot be undone`)) {
       this.authorityService.deleteAuthority(authority.id!).subscribe({
         next: () => {
           this.loadAuthorities();
-          //to do: show success message
+          this.snackBar.open(`Authority "${authority.name}" has been deleted`, 'Close', {
+            duration: 3000,
+            panelClass: 'success-snackbar'
+          });
         },
         error: (err) => {
-          this.errorService.logError(err);
-          //to do: show error message
+          this.snackBar.open(`Failed to delete authority: ${err.message}`, 'Close', {
+            duration: 5000,
+            panelClass: 'error-snackbar'
+          });
+          // The error service handling is done within the authority service
         }
       });
     }
   }
-
-
-
-
 }

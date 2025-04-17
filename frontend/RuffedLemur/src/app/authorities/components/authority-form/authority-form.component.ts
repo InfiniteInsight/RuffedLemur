@@ -1,4 +1,4 @@
-// src/app/authorities/components/authority-form/authority-form.component.ts
+// frontend/RuffedLemur/src/app/authorities/components/authority-form/authority-form.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { Authority, KeyType, AuthorityPlugin } from '../../../shared/models/authority.model';
 import { AuthorityService } from '../../services/authority.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-authority-form',
@@ -27,7 +28,8 @@ export class AuthorityFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private authorityService: AuthorityService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private snackBar: MatSnackBar
   ) {
     // Initialize form with empty values
     this.authorityForm = this.createForm();
@@ -69,9 +71,7 @@ export class AuthorityFormComponent implements OnInit {
         country: [''],
         state: [''],
         location: [''],
-        pluginOptions: this.fb.group({
-          // This will be dynamically populated based on plugin selection
-        })
+        pluginOptions: this.fb.group({})
       })
     });
   }
@@ -87,13 +87,19 @@ export class AuthorityFormComponent implements OnInit {
       },
       error: (err) => {
         this.error = 'Failed to load authority plugins';
-        this.errorService.logError(err);
+        this.snackBar.open('Failed to load authority plugins', 'Close', {
+          duration: 5000,
+          panelClass: 'error-snackbar'
+        });
+        // The error service handling is done within the authority service
       }
     });
   }
 
   loadAuthority(id: number): void {
     this.isLoading = true;
+    this.error = '';
+
     this.authorityService.getAuthority(id).subscribe({
       next: (authority) => {
         // Patch form values
@@ -122,106 +128,122 @@ export class AuthorityFormComponent implements OnInit {
       },
       error: (err) => {
         this.error = 'Failed to load authority details';
-        this.errorService.logError(err);
         this.isLoading = false;
+        this.snackBar.open('Failed to load authority details', 'Close', {
+          duration: 5000,
+          panelClass: 'error-snackbar'
+        });
+        // The error service handling is done within the authority service
       }
     });
   }
 
-updateKeyTypeFields(keyType: KeyType | undefined): void {
-  const keySizeControl = this.authorityForm.get('options.keySize');
-  const curveControl = this.authorityForm.get('options.curve');
+  updateKeyTypeFields(keyType: KeyType | undefined): void {
+    // This method remains unchanged
+    const keySizeControl = this.authorityForm.get('options.keySize');
+    const curveControl = this.authorityForm.get('options.curve');
 
-  if (keyType === KeyType.RSA) {
-    keySizeControl?.setValidators([Validators.required, Validators.min(2048)]);
-    curveControl?.clearValidators();
-    curveControl?.setValue('');
-  } else if (keyType === KeyType.ECC) {
-    keySizeControl?.clearValidators();
-    keySizeControl?.setValue(null);
-    curveControl?.setValidators([Validators.required]);
-    curveControl?.setValue('secp256r1'); // Default curve
-  } else if (keyType === KeyType.ED25519) {
-    keySizeControl?.clearValidators();
-    keySizeControl?.setValue(null);
-    curveControl?.clearValidators();
-    curveControl?.setValue('');
-  }
-
-  keySizeControl?.updateValueAndValidity();
-  curveControl?.updateValueAndValidity();
-}
-
-onSubmit(): void {
-  if (this.authorityForm.invalid) {
-    this.markFormGroupTouched(this.authorityForm);
-    return;
-  }
-
-  this.isSaving = true;
-
-  const authorityData = this.prepareAuthorityData();
-
-  let saveObservable: Observable<Authority>;
-
-  if (this.isEditMode && this.authorityId) {
-    saveObservable = this.authorityService.updateAuthority(this.authorityId, authorityData);
-  } else {
-    saveObservable = this.authorityService.createAuthority(authorityData);
-  }
-
-  saveObservable.subscribe({
-    next: (data) => {
-      this.isSaving = false;
-      this.router.navigate(['/authorities', data.id]);
-    },
-    error: (err) => {
-      this.error = 'Failed to save authority';
-      this.errorService.logError(err);
-      this.isSaving = false;
+    if (keyType === KeyType.RSA) {
+      keySizeControl?.setValidators([Validators.required, Validators.min(2048)]);
+      curveControl?.clearValidators();
+      curveControl?.setValue('');
+    } else if (keyType === KeyType.ECC) {
+      keySizeControl?.clearValidators();
+      keySizeControl?.setValue(null);
+      curveControl?.setValidators([Validators.required]);
+      curveControl?.setValue('secp256r1'); // Default curve
+    } else if (keyType === KeyType.ED25519) {
+      keySizeControl?.clearValidators();
+      keySizeControl?.setValue(null);
+      curveControl?.clearValidators();
+      curveControl?.setValue('');
     }
-  });
-}
 
-prepareAuthorityData(): Partial<Authority> {
-  const formValue = this.authorityForm.value;
-
-  // Clean up the data before sending to API
-  const options = { ...formValue.options };
-
-  // Only include keySize or curve based on key type
-  if (options.keyType === KeyType.ECC) {
-    delete options.keySize;
-  } else if (options.keyType === KeyType.RSA) {
-    delete options.curve;
-  } else if (options.keyType === KeyType.ED25519) {
-    delete options.keySize;
-    delete options.curve;
+    keySizeControl?.updateValueAndValidity();
+    curveControl?.updateValueAndValidity();
   }
 
-  return {
-    name: formValue.name,
-    owner: formValue.owner,
-    description: formValue.description,
-    options: options
-  };
-}
-
-markFormGroupTouched(formGroup: FormGroup): void {
-  Object.values(formGroup.controls).forEach(control => {
-    control.markAsTouched();
-
-    if (control instanceof FormGroup) {
-      this.markFormGroupTouched(control);
+  onSubmit(): void {
+    if (this.authorityForm.invalid) {
+      this.markFormGroupTouched(this.authorityForm);
+      return;
     }
-  });
-}
 
-cancel(): void {
-  if (this.isEditMode && this.authorityId) {
-    this.router.navigate(['/authorities', this.authorityId]);
-  } else {
-    this.router.navigate(['/authorities']);
+    this.isSaving = true;
+    this.error = '';
+
+    const authorityData = this.prepareAuthorityData();
+
+    let saveObservable: Observable<Authority>;
+
+    if (this.isEditMode && this.authorityId) {
+      saveObservable = this.authorityService.updateAuthority(this.authorityId, authorityData);
+    } else {
+      saveObservable = this.authorityService.createAuthority(authorityData);
+    }
+
+    saveObservable.subscribe({
+      next: (data) => {
+        this.isSaving = false;
+        this.snackBar.open(
+          `Authority ${this.isEditMode ? 'updated' : 'created'} successfully`,
+          'Close',
+          { duration: 3000, panelClass: 'success-snackbar' }
+        );
+        this.router.navigate(['/authorities', data.id]);
+      },
+      error: (err) => {
+        this.error = `Failed to ${this.isEditMode ? 'update' : 'create'} authority`;
+        this.isSaving = false;
+        this.snackBar.open(
+          `Failed to ${this.isEditMode ? 'update' : 'create'} authority: ${err.message}`,
+          'Close',
+          { duration: 5000, panelClass: 'error-snackbar' }
+        );
+        // The error service handling is done within the authority service
+      }
+    });
   }
-}
+
+  prepareAuthorityData(): Partial<Authority> {
+    const formValue = this.authorityForm.value;
+
+    // Clean up the data before sending to API
+    const options = { ...formValue.options };
+
+    // Only include keySize or curve based on key type
+    if (options.keyType === KeyType.ECC) {
+      delete options.keySize;
+    } else if (options.keyType === KeyType.RSA) {
+      delete options.curve;
+    } else if (options.keyType === KeyType.ED25519) {
+      delete options.keySize;
+      delete options.curve;
+    }
+
+    return {
+      name: formValue.name,
+      owner: formValue.owner,
+      description: formValue.description,
+      options: options
+    };
+  }
+
+  markFormGroupTouched(formGroup: FormGroup): void {
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
+
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
+    });
+  }
+
+  cancel(): void {
+    if (this.isEditMode && this.authorityId) {
+      this.router.navigate(['/authorities', this.authorityId]);
+    } else {
+      this.router.navigate(['/authorities']);
+    }
+  }
 }

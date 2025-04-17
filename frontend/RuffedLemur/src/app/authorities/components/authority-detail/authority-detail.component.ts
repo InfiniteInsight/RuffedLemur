@@ -1,9 +1,10 @@
-// src/app/authorities/components/authority-detail/authority-detail.component.ts
+// frontend/RuffedLemur/src/app/authorities/components/authority-detail/authority-detail.component.ts
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Authority } from '../../../shared/models/authority.model';
 import { AuthorityService } from '../../services/authority.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-authority-detail',
@@ -20,7 +21,8 @@ export class AuthorityDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private authorityService: AuthorityService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private snackBar: MatSnackBar
   ) {
     this.authorityId = +this.route.snapshot.paramMap.get('id')!;
   }
@@ -31,6 +33,8 @@ export class AuthorityDetailComponent implements OnInit {
 
   loadAuthority(): void {
     this.isLoading = true;
+    this.error = '';
+
     this.authorityService.getAuthority(this.authorityId).subscribe({
       next: (data) => {
         this.authority = data;
@@ -38,8 +42,8 @@ export class AuthorityDetailComponent implements OnInit {
       },
       error: (err) => {
         this.error = 'Failed to load authority details';
-        this.errorService.logError(err);
         this.isLoading = false;
+        // The error service handling is done within the authority service
       }
     });
   }
@@ -55,10 +59,18 @@ export class AuthorityDetailComponent implements OnInit {
         a.click();
         window.URL.revokeObjectURL(url);
         a.remove();
+
+        this.snackBar.open(`Authority exported successfully in ${format.toUpperCase()} format`, 'Close', {
+          duration: 3000,
+          panelClass: 'success-snackbar'
+        });
       },
       error: (err) => {
-        this.errorService.logError(err);
-        // Show error notification
+        this.snackBar.open(`Failed to export authority: ${err.message}`, 'Close', {
+          duration: 5000,
+          panelClass: 'error-snackbar'
+        });
+        // The error service handling is done within the authority service
       }
     });
   }
@@ -74,11 +86,18 @@ export class AuthorityDetailComponent implements OnInit {
     this.authorityService.updateAuthority(this.authorityId, { active: !this.authority.active }).subscribe({
       next: (data) => {
         this.authority = data;
-        // Show success message
+        this.snackBar.open(
+          `Authority ${data.active ? 'activated' : 'deactivated'} successfully`,
+          'Close',
+          { duration: 3000, panelClass: 'success-snackbar' }
+        );
       },
       error: (err) => {
-        this.errorService.logError(err);
-        // Show error message
+        this.snackBar.open(`Failed to update authority: ${err.message}`, 'Close', {
+          duration: 5000,
+          panelClass: 'error-snackbar'
+        });
+        // The error service handling is done within the authority service
       }
     });
   }
@@ -87,12 +106,18 @@ export class AuthorityDetailComponent implements OnInit {
     if (confirm('Are you sure you want to delete this authority? This action cannot be undone.')) {
       this.authorityService.deleteAuthority(this.authorityId).subscribe({
         next: () => {
+          this.snackBar.open('Authority deleted successfully', 'Close', {
+            duration: 3000,
+            panelClass: 'success-snackbar'
+          });
           this.router.navigate(['/authorities']);
-          // Show success message
         },
         error: (err) => {
-          this.errorService.logError(err);
-          // Show error message
+          this.snackBar.open(`Failed to delete authority: ${err.message}`, 'Close', {
+            duration: 5000,
+            panelClass: 'error-snackbar'
+          });
+          // The error service handling is done within the authority service
         }
       });
     }
