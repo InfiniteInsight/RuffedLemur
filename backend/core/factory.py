@@ -1,4 +1,4 @@
-# ruffedlemur/core/factory.py
+# backend/core/factory.py
 """
 Application factory module for ruffedLemur.
 
@@ -10,6 +10,7 @@ from flask_cors import CORS
 
 from ruffedlemur.core.extensions import db, migrate, jwt, api
 from ruffedlemur.core.config import config_by_name
+from ruffedlemur.middleware.security_headers import setup_security_headers
 
 
 def create_app(config_name="development"):
@@ -28,14 +29,37 @@ def create_app(config_name="development"):
     # Load configuration
     app.config.from_object(config_by_name[config_name])
     
-    # Enable CORS
-    CORS(app)
+   # Configure CORS more securely
+    if app.config.get('ENV') == 'production':
+        # In production, limit CORS to specific origins
+        CORS(app, resources={
+            r"/api/*": {
+                "origins": app.config.get('ALLOWED_ORIGINS', ['https://your-production-domain.com']),
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization", "X-CSRF-TOKEN"],
+                "expose_headers": ["Content-Type", "X-CSRF-TOKEN"],
+                "supports_credentials": True,
+                "max_age": 600
+            }
+        })
+    else:
+        # In development, allow all origins
+        CORS(app)
+
+     # Configure session security
+    app.config['SESSION_COOKIE_SECURE'] = app.config.get('ENV') == 'production'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
     
     # Initialize extensions
     initialize_extensions(app)
     
     # Register blueprints
     register_blueprints(app)
+
+    # Setup security headers
+    setup_security_headers(app)
     
     # Register error handlers
     register_error_handlers(app)

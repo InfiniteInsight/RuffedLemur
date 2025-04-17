@@ -17,6 +17,8 @@ from ruffedlemur.services.authService import (
     authenticate_user, refresh_access_token, get_sso_providers,
     get_sso_login_url, handle_sso_callback
 )
+from ruffedlemur.utils.security import generate_csrf_token, validate_csrf_token
+from ruffedlemur.utils.rate_limit import rate_limit
 
 
 # Define schemas
@@ -63,6 +65,7 @@ auth_api = SmorestBlueprint(
 
 
 @auth_api.route('/login', methods=['POST'])
+@rate_limit(limit=5, period=300, message="Too many login attempts. Please try again in 5 minutes.")
 @auth_api.arguments(LoginSchema)
 @auth_api.response(200, TokenSchema)
 def login(login_data):
@@ -319,10 +322,89 @@ def sso_callback(provider_name):
         return redirect(error_url)
 
 
-# REST API routes for authentication (alternative to smorest)
+@auth_bp.route('/api/v1/register', methods=['POST'])
+@rate_limit(limit=3, period=3600, message="Too many registration attempts. Please try again later.")
+def api_register():
+    """Register a new user."""
+    # Validate CSRF token
+    csrf_token = request.headers.get('X-CSRF-TOKEN')
+    if not csrf_token or not validate_csrf_token(csrf_token):
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid CSRF token',
+            'code': 403
+        }), 403
+    
+    # Define schema for registration data
+    class RegisterSchema(Schema):
+        """Schema for registration request."""
+        username = fields.String(required=True, validate=validate.Length(min=4, max=128))
+        email = fields.Email(required=True)
+        password = fields.String(required=True, validate=validate.Length(min=8))
+    
+    schema = RegisterSchema()
+    
+    try:
+        # Validate request data
+        data = schema.load(request.get_json())
+        
+        # Check if username or email already exists
+        if User.query.filter(
+            or_(User.username == data['username'], User.email == data['email'])
+        ).first():
+            return jsonify({
+                'status': 'error',
+                'message': 'Username or email already exists',
+                'code': 409
+            }), 409
+        
+        # Create user
+        user = User(
+            username=data['username'],
+            email=data['email']
+        )
+        user.set_password(data['password'])
+        
+        # Add default role
+        default_role = Role.query.filter_by(name='readonly').first()
+        if default_role:
+            user.roles.append(default_role)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Registration successful',
+            'user': user.to_dict()
+        }), 201
+    
+    except ValidationError as e:
+        raise APIValidationError(str(e))
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'code': 500
+        }), 500
+
+
+# REST API routes for authentication
 @auth_bp.route('/api/v1/login', methods=['POST'])
+@rate_limit(limit=5, period=300, message="Too many login attempts. Please try again in 5 minutes.")
 def api_login():
     """Login endpoint for REST API."""
+    # Validate CSRF token
+    csrf_token = request.headers.get('X-CSRF-TOKEN')
+    if not csrf_token or not validate_csrf_token(csrf_token):
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid CSRF token',
+            'code': 403
+        }), 403
+    
     schema = LoginSchema()
     
     try:
@@ -335,7 +417,16 @@ def api_login():
             password=data['password']
         )
         
-        return jsonify(tokens), 200
+        # Create response
+        response = jsonify({
+            'status': 'success',
+            'user': user.to_dict()
+        })
+        
+        # Set cookies
+        set_auth_cookies(response, tokens)
+        
+        return response, 200
     
     except ValidationError as e:
         raise APIValidationError(str(e))

@@ -17,7 +17,6 @@ from flask_jwt_extended import (
     get_jwt_identity, verify_jwt_in_request
 )
 from werkzeug.security import check_password_hash
-
 from ruffedlemur.models.userAndRolesModel import User, Role
 from ruffedlemur.api.errors import UnauthorizedError, ValidationError
 
@@ -32,9 +31,6 @@ def authenticate_user(username: str, password: str) -> Tuple[Dict[str, Any], Use
         
     Returns:
         Tuple of (tokens, user)
-        
-    Raises:
-        UnauthorizedError: If authentication fails
     """
     # Find user by username
     user = User.query.filter_by(username=username).first()
@@ -76,18 +72,20 @@ def generate_tokens(user: User) -> Dict[str, Any]:
     )
     
     # Create refresh token
+    refresh_expires_delta = current_app.config.get('JWT_REFRESH_TOKEN_EXPIRES', timedelta(days=30))
     refresh_token = create_refresh_token(
         identity=user.id,
-        expires_delta=current_app.config.get('JWT_REFRESH_TOKEN_EXPIRES', timedelta(days=30))
+        expires_delta=refresh_expires_delta
     )
     
+    # Return tokens and expiry data (these will be set as cookies by the endpoint)
     return {
         'access_token': access_token,
         'refresh_token': refresh_token,
         'token_type': 'bearer',
-        'expires_in': int(expires_delta.total_seconds())
+        'expires_in': int(expires_delta.total_seconds()),
+        'user': user.to_dict()  # Include user data in response
     }
-
 
 def refresh_access_token() -> Dict[str, Any]:
     """
