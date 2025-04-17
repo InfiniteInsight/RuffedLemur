@@ -10,7 +10,7 @@
         <mat-form-field class="full-width" appearance="outline">
           <mat-label>Username</mat-label>
           <input matInput formControlName="username" placeholder="Enter your username">
-          <mat-error *ngIf="loginForm.controls['Username'].hasError('required')">
+          <mat-error *ngIf="loginForm.controls['username'].hasError('required')">
             Username is required
           </mat-error>
         </mat-form-field>
@@ -23,7 +23,7 @@
           </mat-error>
         </mat-form-field>
 
-        <div *ngIf="error" clasws="error-message">
+        <div *ngIf="error" class="error-message">
           {{ error }}
         </div>
 
@@ -38,36 +38,27 @@
           <span>Or login with</span>
         </div>
 
-        <div class="sso-buttons">
-          <button mat-stroked-button type="button" (click)="loginWithSSO('okta')" class="sso-button">
-            Okta
-          </button>
-
-          <button mat-stroked-button type="button" (click)="loginWithSSO('google')" class="sso-button">
-            Google
-          </button>
-
-          <button mat-stroked-button type="button" (click)="loginWithSSO('github')" class="sso-button">
-            GitHub
-          </button>
-
-          <button mat-stroked-button type="button" (click)="loginWithSSO('microsoft')" class="sso-button">
-            Microsoft
-          </button>
-
           <div class="sso-buttons">
-            <button mat-stroked-button type="button" (click)="loginWithSSO('Ping')" class="sso-button">
+            <button mat-stroked-button type="button" (click)="loginWithSSO('okta')" class="sso-button">
+              Okta
+            </button>
+            <button mat-stroked-button type="button" (click)="loginWithSSO('google')" class="sso-button">
+              Google
+            </button>
+            <button mat-stroked-button type="button" (click)="loginWithSSO('github')" class="sso-button">
+              GitHub
+            </button>
+            <button mat-stroked-button type="button" (click)="loginWithSSO('microsoft')" class="sso-button">
+              Microsoft
+            </button>
+            <button mat-stroked-button type="button" (click)="loginWithSSO('ping')" class="sso-button">
               Ping Identity
             </button>
-
-          <div class="sso-buttons">
             <button mat-stroked-button type="button" (click)="loginWithSSO('auth0')" class="sso-button">
               Auth0
             </button>
-
-
+          </div>
         </div>
-      </div>
-    </mat-card-content>
+      </mat-card-content>
   </mat-card>
 </div>

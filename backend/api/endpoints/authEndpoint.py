@@ -437,6 +437,16 @@ def api_sso_callback(provider_name):
             'message': str(e),
             'code': 401
         }), 401
+    
+# Cross Site Request Forgery protection
+@auth_bp.route('/api/v1/csrf-token', methods=['GET'])
+def get_csrf_token():
+    """Get CSRF token for forms."""
+    token = generate_csrf_token()  # Implement this function
+    return jsonify({
+        'token': token
+    })
+
 
 
 # Register blueprint with Flask app

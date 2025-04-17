@@ -33,6 +33,13 @@ export interface Certificate {
   san?: string[]; //subject alternative name
   quantity: number;
   team?: string;
+  is_ca: boolean;
+  revoked: boolean;
+  rotation: boolean;
+  has_private_key: boolean;
+  extensions?: any;
+
+
 }
 
 export interface Authority {

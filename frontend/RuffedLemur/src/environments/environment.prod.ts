@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: '/api/1',
+  apiUrl: '/api/v1',
   logErrorsToServer: true,
   defaultPageSize: 25,
   refreshTokenInterval: 10 * 60 * 1000, // 10 minutes in milliseconds

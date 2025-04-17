@@ -1,0 +1,81 @@
+<!-- src/app/shared/components/plugin-config/plugin-config.component.html -->
+<div class="plugin-config-container">
+  <form [formGroup]="configForm" *ngIf="formFields.length > 0">
+    <div class="form-field" *ngFor="let field of formFields">
+      <!-- Text, Number, Email, URL inputs -->
+      <mat-form-field *ngIf="['text', 'number', 'email', 'url', 'password'].includes(field.type)" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <input
+          matInput
+          [type]="field.type"
+          [formControlName]="field.key"
+          [placeholder]="field.placeholder"
+          [required]="field.required"
+        >
+        <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
+        <mat-error *ngIf="configForm.get(field.key)?.invalid && configForm.get(field.key)?.touched">
+          This field is required
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Textarea for multiline text -->
+      <mat-form-field *ngIf="field.type === 'textarea'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <textarea
+          matInput
+          [formControlName]="field.key"
+          [placeholder]="field.placeholder"
+          [required]="field.required"
+          rows="3"
+        ></textarea>
+        <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
+        <mat-error *ngIf="configForm.get(field.key)?.invalid && configForm.get(field.key)?.touched">
+          This field is required
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Dropdown/Select -->
+      <mat-form-field *ngIf="field.type === 'select'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <mat-select [formControlName]="field.key" [required]="field.required">
+          <mat-option *ngFor="let option of field.options" [value]="option">
+            {{ option }}
+          </mat-option>
+        </mat-select>
+        <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
+        <mat-error *ngIf="configForm.get(field.key)?.invalid && configForm.get(field.key)?.touched">
+          This field is required
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Checkbox -->
+      <div *ngIf="field.type === 'checkbox'" class="checkbox-field">
+        <mat-checkbox [formControlName]="field.key">
+          {{ field.label }}
+        </mat-checkbox>
+        <div class="checkbox-hint" *ngIf="field.description">{{ field.description }}</div>
+      </div>
+
+      <!-- Date picker -->
+      <mat-form-field *ngIf="field.type === 'date'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <input
+          matInput
+          [matDatepicker]="picker"
+          [formControlName]="field.key"
+          [required]="field.required"
+        >
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
+        <mat-error *ngIf="configForm.get(field.key)?.invalid && configForm.get(field.key)?.touched">
+          This field is required
+        </mat-error>
+      </mat-form-field>
+    </div>
+  </form>
+
+  <div *ngIf="formFields.length === 0" class="no-config">
+    <p>No configuration options available for this plugin.</p>
+  </div>
+</div>
