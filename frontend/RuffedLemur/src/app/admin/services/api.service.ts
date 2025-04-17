@@ -38,7 +38,7 @@ export class AdminApiService {
       );
   }
 
-  put<T>(endpoint: string, id: string, body: any): Observable<T> {
+  put<T>(endpoint: string, id: string | number, body: any): Observable<T> {
     return this.http.put<T>(`${this.apiUrl}/${endpoint}/${id}`, body)
       .pipe(
         catchError(error => {
@@ -48,7 +48,7 @@ export class AdminApiService {
       );
   }
 
-  delete<T>(endpoint: string, id: string): Observable<T> {
+  delete<T>(endpoint: string, id: string | number): Observable<T> {
     return this.http.delete<T>(`${this.apiUrl}/${endpoint}/${id}`)
       .pipe(
         catchError(error => {
