@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { User, Role, Permission, SystemSetting } from '../../shared/models/admin.model';
+import { ErrorService } from '../../core/services/error/error.service';
+
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -25,7 +27,10 @@ interface ListParams {
 export class AdminService {
   private apiUrl = `${environment.apiUrl}`;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private errorService: ErrorService
+  ) { }
 
   // User Management
   getUsers(params: ListParams = {}): Observable<PaginatedResponse<User>> {
@@ -50,63 +55,147 @@ export class AdminService {
       }
     }
 
-    return this.http.get<PaginatedResponse<User>>(`${this.apiUrl}/users`, { params: httpParams });
+    return this.http.get<PaginatedResponse<User>>(`${this.apiUrl}/users`, { params: httpParams })
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to load users'));
+      })
+    );
   }
 
   getUser(id: number): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/users/${id}`);
+    return this.http.get<User>(`${this.apiUrl}/users/${id}`)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to load users by id'));
+      })
+    );
   }
 
   createUser(user: Partial<User>): Observable<User> {
-    return this.http.post<User>(`${this.apiUrl}/users`, user);
+    return this.http.post<User>(`${this.apiUrl}/users`, user)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to create user'));
+      })
+    );
   }
 
   updateUser(id: number, user: Partial<User>): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/users/${id}`, user);
+    return this.http.put<User>(`${this.apiUrl}/users/${id}`, user)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to update users'));
+      })
+    );
   }
 
   deleteUser(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/users/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/users/${id}`)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to delete users'));
+      })
+    );
   }
 
   // Role Management
   getRoles(): Observable<Role[]> {
-    return this.http.get<Role[]>(`${this.apiUrl}/roles`);
+    return this.http.get<Role[]>(`${this.apiUrl}/roles`)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to load roles'));
+      })
+    );
   }
 
   getRole(id: number): Observable<Role> {
-    return this.http.get<Role>(`${this.apiUrl}/roles/${id}`);
+    return this.http.get<Role>(`${this.apiUrl}/roles/${id}`)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to load role by id'));
+      })
+    );
   }
 
   createRole(role: Partial<Role>): Observable<Role> {
-    return this.http.post<Role>(`${this.apiUrl}/roles`, role);
+    return this.http.post<Role>(`${this.apiUrl}/roles`, role)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to create role'));
+      })
+    );
   }
 
   updateRole(id: number, role: Partial<Role>): Observable<Role> {
-    return this.http.put<Role>(`${this.apiUrl}/roles/${id}`, role);
+    return this.http.put<Role>(`${this.apiUrl}/roles/${id}`, role)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to update roles'));
+      })
+    );
   }
 
   deleteRole(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/roles/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/roles/${id}`)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to delete roles'));
+      })
+    );
   }
 
   // Permission Management
   getPermissions(): Observable<Permission[]> {
-    return this.http.get<Permission[]>(`${this.apiUrl}/permissions`);
+    return this.http.get<Permission[]>(`${this.apiUrl}/permissions`)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to get permissions'));
+      })
+    );
   }
 
   // System Settings
   getSettings(): Observable<SystemSetting[]> {
-    return this.http.get<SystemSetting[]>(`${this.apiUrl}/settings`);
+    return this.http.get<SystemSetting[]>(`${this.apiUrl}/settings`)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to get settings'));
+      })
+    );
   }
 
   updateSetting(key: string, value: string): Observable<SystemSetting> {
-    return this.http.put<SystemSetting>(`${this.apiUrl}/settings/${key}`, { value });
+    return this.http.put<SystemSetting>(`${this.apiUrl}/settings/${key}`, { value })
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to update settings'));
+      })
+    );
   }
 
   // System Information
   getSystemInfo(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/system/info`);
+    return this.http.get<any>(`${this.apiUrl}/system/info`)
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to get system info'));
+      })
+    );
   }
 
   // System Logs
@@ -125,6 +214,12 @@ export class AdminService {
       httpParams = httpParams.set('filter', params.filter);
     }
 
-    return this.http.get<PaginatedResponse<any>>(`${this.apiUrl}/system/logs`, { params: httpParams });
+    return this.http.get<PaginatedResponse<any>>(`${this.apiUrl}/system/logs`, { params: httpParams })
+    .pipe(
+      catchError(error => {
+        this.errorService.logError(error);
+        return throwError(() => new Error('Failed to get system logs'));
+      })
+    );
   }
 }
