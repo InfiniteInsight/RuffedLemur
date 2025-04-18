@@ -1,9 +1,18 @@
+// Path: frontend/RuffedLemur/src/app/core/services/api/api.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap, map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { ErrorService } from '../error/error.service';
+
+export interface ApiResponse<T> {
+  status: 'success' | 'error';
+  data?: T;
+  message?: string;
+  error?: string;
+  code?: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -25,11 +34,12 @@ export class ApiService {
   get<T>(endpoint: string, params?: any, options?: any): Observable<T> {
     const url = `${this.apiUrl}/${endpoint}`;
     const httpParams = this.buildHttpParams(params);
-    //const httpOptions = this.buildHttpOptions(options);
-    const httpOptions = { ...(options || {}), observe: 'body '};
+    const httpOptions = this.buildHttpOptions(options);
 
-    return this.http.get<T>(url, { ...httpOptions, params: httpParams })
+    return this.http.get<ApiResponse<T>>(url, { ...httpOptions, params: httpParams })
       .pipe(
+        tap(response => this.logSuccess(endpoint, response)),
+        map(response => this.extractData<T>(response)),
         catchError(error => this.handleError(error, `GET ${endpoint}`))
       );
   }
@@ -44,8 +54,10 @@ export class ApiService {
     const url = `${this.apiUrl}/${endpoint}`;
     const httpOptions = this.buildHttpOptions(options);
 
-    return this.http.post<T>(url, body, httpOptions)
+    return this.http.post<ApiResponse<T>>(url, body, httpOptions)
       .pipe(
+        tap(response => this.logSuccess(endpoint, response)),
+        map(response => this.extractData<T>(response)),
         catchError(error => this.handleError(error, `POST ${endpoint}`))
       );
   }
@@ -60,8 +72,10 @@ export class ApiService {
     const url = `${this.apiUrl}/${endpoint}`;
     const httpOptions = this.buildHttpOptions(options);
 
-    return this.http.put<T>(url, body, httpOptions)
+    return this.http.put<ApiResponse<T>>(url, body, httpOptions)
       .pipe(
+        tap(response => this.logSuccess(endpoint, response)),
+        map(response => this.extractData<T>(response)),
         catchError(error => this.handleError(error, `PUT ${endpoint}`))
       );
   }
@@ -75,10 +89,34 @@ export class ApiService {
     const url = `${this.apiUrl}/${endpoint}`;
     const httpOptions = this.buildHttpOptions(options);
 
-    return this.http.delete<T>(url, httpOptions)
+    return this.http.delete<ApiResponse<T>>(url, httpOptions)
       .pipe(
+        tap(response => this.logSuccess(endpoint, response)),
+        map(response => this.extractData<T>(response)),
         catchError(error => this.handleError(error, `DELETE ${endpoint}`))
       );
+  }
+
+  /**
+   * Extract data from API response
+   * @param response API response
+   */
+  protected extractData<T>(response: ApiResponse<T>): T {
+    if (response.status === 'error') {
+      throw new Error(response.error || response.message || 'Unknown error');
+    }
+    return response.data as T;
+  }
+
+  /**
+   * Log successful API response
+   * @param endpoint API endpoint
+   * @param response API response
+   */
+  protected logSuccess(endpoint: string, response: any): void {
+    if (environment.logApiResponses) {
+      console.log(`API Response [${endpoint}]:`, response);
+    }
   }
 
   /**
@@ -144,10 +182,7 @@ export class ApiService {
    * @param operation The operation that was attempted
    */
   protected handleError(error: any, operation: string): Observable<never> {
-    // Log the error to console for debugging
-    console.error(`${operation} failed:`, error);
-
-    // Log to error service
+    // Log the error
     this.errorService.logError({
       operation,
       message: error.message || error.statusText,
@@ -156,8 +191,23 @@ export class ApiService {
       timestamp: new Date().toISOString()
     });
 
-    // Return an observable with a user-facing error message
-    const errorMessage = error.error?.message || 'Something went wrong. Please try again later.';
+    // Get error message
+    let errorMessage: string;
+
+    if (error instanceof HttpErrorResponse) {
+      // Server error
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.status === 0) {
+        errorMessage = 'Could not connect to the server. Please check your internet connection.';
+      } else {
+        errorMessage = `Server error: ${error.status} ${error.statusText}`;
+      }
+    } else {
+      // Client error
+      errorMessage = error.message || 'Something went wrong. Please try again later.';
+    }
+
     return throwError(() => new Error(errorMessage));
   }
 }

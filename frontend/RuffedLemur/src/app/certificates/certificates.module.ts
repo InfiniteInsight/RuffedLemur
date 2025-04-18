@@ -20,6 +20,7 @@ import { CertificateFormComponent } from './components/certificate-form/certific
 import { AuthGuard } from '../core/guards/auth.guard';
 import { MatDialogModule } from '@angular/material/dialog';
 import { SharedModule } from '../shared/shared.module';
+import { PendingChangesGuard } from '../core/guards/pending-changes.guard';
 
 const routes: Routes = [
   {
@@ -30,7 +31,8 @@ const routes: Routes = [
   {
     path: 'new',
     component: CertificateFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    canDeactivate: [PendingChangesGuard]
   },
   {
     path: ':id',
@@ -40,7 +42,8 @@ const routes: Routes = [
   {
     path: ':id/edit',
     component: CertificateFormComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    canDeactivate: [PendingChangesGuard]
   }
 ];
 

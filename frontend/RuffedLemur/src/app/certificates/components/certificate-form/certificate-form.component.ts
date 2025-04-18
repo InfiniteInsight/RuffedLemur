@@ -10,13 +10,14 @@ import { Certificate, Authority } from '../../../shared/models/certificate.model
 import { CertificateService } from '../../services/certificate.service';
 import { AuthorityService } from '../../../authorities/services/authority.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { ComponentCanDeactivate } from '../../../core/guards/pending-changes.guard';
 
 @Component({
   selector: 'app-certificate-form',
   templateUrl: './certificate-form.component.html',
   styleUrls: ['./certificate-form.component.scss']
 })
-export class CertificateFormComponent implements OnInit {
+export class CertificateFormComponent implements OnInit, ComponentCanDeactivate {
   certificateForm: FormGroup;
   authorities: Authority[] = [];
   certificateId: number | null = null;
@@ -219,4 +220,10 @@ export class CertificateFormComponent implements OnInit {
   dismissError(): void {
     this.loadingError = '';
   }
+
+  canDeactivate(): boolean {
+    return !this.certificateForm.dirty || this.isSaving;
+  }
+
+
 }
