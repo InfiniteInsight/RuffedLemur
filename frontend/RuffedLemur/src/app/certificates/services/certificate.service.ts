@@ -45,8 +45,10 @@ export class CertificateService extends ApiService {
   /**
    * Get a single certificate by ID
    */
-  getCertificate(id: number): Observable<Certificate> {
-    return this.get<Certificate>(`certificates/${id}`);
+  getCertificate(id: string | number): Observable<Certificate> {
+    // convert id to string for the URL
+    const certId = id.toString();
+    return this.get<Certificate>(`certificates/${certId}`);
   }
 
   /**
@@ -59,22 +61,27 @@ export class CertificateService extends ApiService {
   /**
    * Update an existing certificate
    */
-  updateCertificate(id: number, certificate: Partial<Certificate>): Observable<Certificate> {
-    return this.put<Certificate>(`certificates/${id}`, certificate);
+  updateCertificate(id: string | number, certificate: Partial<Certificate>): Observable<Certificate> {
+    const certId = id.toString();
+    return this.put<Certificate>(`certificates/${certId}`, certificate);
   }
 
   /**
    * Revoke a certificate
    */
-  revokeCertificate(id: number, reason: string): Observable<Certificate> {
-    return this.post<Certificate>(`certificates/${id}/revoke`, { reason });
+  revokeCertificate(id: string | number, reason: string): Observable<Certificate> {
+    // Convert id to string for the URL
+    const certId = id.toString();
+    return this.post<Certificate>(`certificates/${certId}/revoke`, { reason });
   }
 
   /**
    * Export a certificate in the specified format
    */
-  exportCertificate(id: number, format: 'pem' | 'der' | 'pkcs12'): Observable<Blob> {
-    return this.get<Blob>(`certificates/${id}/export/${format}`, {}, {
+  exportCertificate(id: string | number, format: 'pem' | 'der' | 'pkcs12'): Observable<Blob> {
+    // convert id to string for the URL
+    const certId = id.toString();
+    return this.get<Blob>(`certificates/${certId}/export/${format}`, {}, {
       responseType: 'blob'
     });
   }

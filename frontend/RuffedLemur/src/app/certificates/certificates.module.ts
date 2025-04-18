@@ -18,6 +18,8 @@ import { CertificateListComponent } from './components/certificate-list/certific
 import { CertificateDetailComponent } from './components/certificate-detail/certificate-detail.component';
 import { CertificateFormComponent } from './components/certificate-form/certificate-form.component';
 import { AuthGuard } from '../core/guards/auth.guard';
+import { MatDialogModule } from '@angular/material/dialog';
+import { SharedModule } from '../shared/shared.module';
 
 const routes: Routes = [
   {
@@ -34,7 +36,6 @@ const routes: Routes = [
     path: ':id',
     component: CertificateDetailComponent,
     canActivate: [AuthGuard]
-    // src/app/certificates/certificates.module.ts (continued)
   },
   {
     path: ':id/edit',
@@ -63,7 +64,9 @@ const routes: Routes = [
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatDialogModule,
+    SharedModule
   ]
 })
 export class CertificatesModule { }

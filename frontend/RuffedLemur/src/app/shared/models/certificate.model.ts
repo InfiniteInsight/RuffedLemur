@@ -1,51 +1,44 @@
-import { User } from "./user.model";
-
+// frontend/RuffedLemur/src/app/shared/models/certificate.model.ts
 export interface Certificate {
-  status?: string;
-  commonName: string; // Common Name or Canonical Name
-  chain?: string;
-  csr?: string;
-  authority?: Authority;
-  authorityId: Authority;
-  owner: string;
-  serial: string;
-  id: number;
-  issuer?: string;
-  dateCreated: string; // possibly date object
-  notBefore: string; // Could also be a Date object, but string is safer initially
-  notAfter: string; // Could also be a Date object
-  destinations: string; //where the cert will be installed
-  bits: number;
-  body: string; //certificate body
-  description?: string;
-  deleted?: boolean;
-  notifications?: string[]; //en
-  fingerprint: string;
-  signatureAlgorithm: string;
-  signatureHashAlgorithm: string;
-  user: User[]; //should match user model
-  active: boolean;
-  domains: Domains[];
-  replaces: string;
-  replaced: string;
+  id: string | number;  // Change to string for UUID compatibility
   name: string;
-  roles: string;
-  san?: string[]; //subject alternative name
-  quantity: number;
-  team?: string;
+  owner: string;
+  description?: string;
+  commonName: string;
+  chain?: string;
+  body: string;
+  private_key?: string;
+  cn: string;
+  serial: string;
+  status?: string;
+  notBefore: string;
+  notAfter: string;
+  bits?: number;
+  san?: string;
+  issuer?: string;
+  distinguished_name?: string;
+  key_type?: string;
+  signing_algorithm?: string;
   is_ca: boolean;
   revoked: boolean;
   rotation: boolean;
   has_private_key: boolean;
+  domains: string[];
+  authorityId: string;
+  authority?: Authority;
+  user_id?: string;
+  team?: string;
+  source?: string;
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
   extensions?: any;
-
-
 }
 
 export interface Authority {
-  active: boolean;
-  owner: string;
-  id: number;
-  description?: string[];
+  id: string;
   name: string;
+  description?: string;
+  owner?: string;
+  active: boolean;
 }

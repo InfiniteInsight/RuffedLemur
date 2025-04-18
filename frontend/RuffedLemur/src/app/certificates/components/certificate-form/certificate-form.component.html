@@ -20,10 +20,6 @@
     (onDismiss)="dismissError()">
   </app-error-display>
 
-  <!-- <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div> -->
-
   <form [formGroup]="certificateForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="certificate-form">
     <mat-card>
       <mat-card-content>
@@ -132,6 +128,14 @@
           </div>
         </div>
       </mat-card-content>
+
+       <!-- Error Message for Saving -->
+       <app-error-display
+       *ngIf="savingError"
+       [errorMessage]="savingError"
+       [severity]="'error'"
+       (onDismiss)="savingError = ''">
+     </app-error-display>
 
       <mat-card-actions>
         <button type="button" mat-button (click)="cancel()">Cancel</button>

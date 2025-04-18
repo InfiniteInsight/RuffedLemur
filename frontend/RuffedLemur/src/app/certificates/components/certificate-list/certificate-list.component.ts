@@ -1,10 +1,13 @@
-// src/app/certificates/components/certificate-list/certificate-list.component.ts
+// Path: frontend/RuffedLemur/src/app/certificates/components/certificate-list/certificate-list.component.ts
+
 import { Component, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { Certificate } from '../../../shared/models/certificate.model';
 import { CertificateService } from '../../services/certificate.service';
 import { ErrorService } from '../../../core/services/error/error.service';
 import { finalize } from 'rxjs/operators';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-certificate-list',
@@ -13,9 +16,9 @@ import { finalize } from 'rxjs/operators';
 })
 export class CertificateListComponent implements OnInit {
   certificates: Certificate[] = [];
-  displayedColumns: string[] = ['name', 'commonName', 'san', 'notAfter', 'issuer', 'status', 'owner', 'team', 'fingerprint', 'actions'];
+  displayedColumns: string[] = ['name', 'commonName', 'san', 'notAfter', 'issuer', 'status', 'owner', 'team', 'actions'];
 
-  //loading and error state
+  // Loading and error state
   isLoading = true;
   loadingError = '';
   showRetry = false;
@@ -24,14 +27,15 @@ export class CertificateListComponent implements OnInit {
   totalItems = 0;
   pageSize = 10;
   currentPage = 0;
-  pageSizeOptions = [5, 10, 25, 50, 100, 200, 500];
+  pageSizeOptions = [5, 10, 25, 50, 100, 150, 200, 250, 300, 400, 500,];
 
   // Filtering
   filterText = '';
 
   constructor(
     private certificateService: CertificateService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -55,12 +59,10 @@ export class CertificateListComponent implements OnInit {
       next: (data) => {
         this.certificates = data.items;
         this.totalItems = data.total;
-        //this.isLoading = false;
       },
       error: (err) => {
         this.loadingError = 'Failed to load certificates';
-        this.errorService.handleError(err, 'loading certificates');
-        this.isLoading = false;
+        this.errorService.handleError(err, 'Loading certificates');
         this.showRetry = true;
       }
     });
@@ -107,7 +109,6 @@ export class CertificateListComponent implements OnInit {
     }
   }
 
-
   exportCertificate(id: number, format: 'pem' | 'der' | 'pkcs12'): void {
     this.certificateService.exportCertificate(id, format).subscribe({
       next: (blob) => {
@@ -121,32 +122,41 @@ export class CertificateListComponent implements OnInit {
         a.remove();
       },
       error: (err) => {
-        this.loadingError = 'Failed to export certificates';
-        this.errorService.handleError(err, 'export certificates');
-        this.isLoading = false;
-        this.showRetry = true;
-      },
-
-
+        this.errorService.handleError(err, `Exporting certificate in ${format} format`);
+      }
     });
   }
 
   openRevokeDialog(certificate: Certificate): void {
-    // TO DO: replace this with a proper dialog later
-    if (confirm(`Are you sure you want to revoke certificate "${certificate.name}"?`)) {
-      this.certificateService.revokeCertificate(certificate.id!, 'Manual revocation').subscribe({
-        next: () => {
-          // Refresh the list
-          this.loadCertificates();
-        },
-        error: (err) => {
-          this.loadingError = 'Failed to revoke certificates';
-          this.errorService.handleError(err, 'revoke certificates');
-          this.isLoading = false;
-          this.showRetry = true;
-        }
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Revoke Certificate',
+        message: `Are you sure you want to revoke certificate <strong>"${certificate.name}"</strong>?<br><br>This action cannot be undone.`,
+        confirmButtonText: 'Revoke',
+        cancelButtonText: 'Cancel',
+        type: 'danger'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // Fix the TypeScript error by converting id to number if needed
+        const certId: number = typeof certificate.id === 'string' ? parseInt(certificate.id, 10) : certificate.id;
+
+        this.certificateService.revokeCertificate(certId, 'Manual revocation').subscribe({
+          next: () => {
+            // Show success notification
+            this.errorService.showSuccess(`Certificate "${certificate.name}" has been revoked`);
+            // Refresh the list
+            this.loadCertificates();
+          },
+          error: (err) => {
+            this.errorService.handleError(err, 'Revoking certificate');
+          }
+        });
+      }
+    });
   }
 
   retryLoading(): void {
@@ -156,5 +166,4 @@ export class CertificateListComponent implements OnInit {
   dismissError(): void {
     this.loadingError = '';
   }
-
 }

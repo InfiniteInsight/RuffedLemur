@@ -27,13 +27,13 @@ import { MatExpansionModule } from '@angular/material/expansion';
 
 // Components
 import { PluginConfigComponent } from './components/plugin-config/plugin-config.component';
+import { ConfirmationDialogComponent } from './components/confirmation-dialog/confirmation-dialog.component';
 
-// Import other shared components here
+
 
 @NgModule({
   declarations: [
     PluginConfigComponent,
-    // Add other shared components here
   ],
   imports: [
     CommonModule,
@@ -92,7 +92,7 @@ import { PluginConfigComponent } from './components/plugin-config/plugin-config.
 
     // Components
     PluginConfigComponent,
-    // Export other shared components here
+    ConfirmationDialogComponent,
   ]
 })
 export class SharedModule { }

@@ -38,4 +38,19 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   .mat-simple-snackbar-action {
     color: white;
   }
+
+  .error-snackbar {
+    background-color: #f44336 !important;
+    color: white !important;
+  }
+
+  .success-snackbar {
+    background-color: #4caf50 !important;
+    color: white !important;
+  }
+
+  /* Add to the mat-snackbar button to ensure visibility */
+  .mat-mdc-snack-bar-action .mdc-button__label {
+    color: white !important;
+  }
 }

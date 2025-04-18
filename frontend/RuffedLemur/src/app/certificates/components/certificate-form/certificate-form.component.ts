@@ -1,7 +1,10 @@
+// frontend/RuffedLemur/src/app/certificates/components/certificate-form/certificate-form.component.ts
+
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 import { Certificate, Authority } from '../../../shared/models/certificate.model';
 import { CertificateService } from '../../services/certificate.service';
@@ -18,15 +21,13 @@ export class CertificateFormComponent implements OnInit {
   authorities: Authority[] = [];
   certificateId: number | null = null;
 
-  //Loading, error, edit, save state
+  // Loading, error, edit, save state
   isEditMode = false;
   isSaving = false;
   isLoading = false;
   showRetry = false;
-  //error = '';
-  loadingError = ''
-  savingError = ''
-
+  loadingError = '';
+  savingError = '';
 
   constructor(
     private fb: FormBuilder,
@@ -91,7 +92,7 @@ export class CertificateFormComponent implements OnInit {
       },
       error: (err: any) => {
         this.loadingError = 'Failed to load certificate authorities';
-        this.errorService.handleError(err, 'loading certificate authorities');
+        this.errorService.handleError(err, 'Loading certificate authorities');
         this.showRetry = true;
       }
     });
@@ -99,6 +100,7 @@ export class CertificateFormComponent implements OnInit {
 
   loadCertificate(id: number) {
     this.isLoading = true;
+    this.loadingError = '';
 
     this.certificateService.getCertificate(id).subscribe({
       next: (certificate) => {
@@ -132,7 +134,7 @@ export class CertificateFormComponent implements OnInit {
       },
       error: (err) => {
         this.loadingError = 'Failed to load certificate details';
-        this.errorService.handleError(err,'loading certificates');
+        this.errorService.handleError(err, 'Loading certificate');
         this.isLoading = false;
         this.showRetry = true;
       }
@@ -141,11 +143,13 @@ export class CertificateFormComponent implements OnInit {
 
   onSubmit() {
     if (this.certificateForm.invalid) {
+      // Mark all fields as touched to show validation errors
       this.markFormGroupTouched(this.certificateForm);
       return;
     }
 
     this.isSaving = true;
+    this.savingError = '';
 
     const certificateData = this.prepareCertificateData();
     let saveObservable: Observable<Certificate>;
@@ -159,11 +163,13 @@ export class CertificateFormComponent implements OnInit {
     saveObservable.subscribe({
       next: (data) => {
         this.isSaving = false;
+        // Show success notification
+        this.errorService.showSuccess(`Certificate ${this.isEditMode ? 'updated' : 'created'} successfully`);
         this.router.navigate(['/certificates', data.id]);
       },
       error: (err) => {
-        this.savingError = 'Failed to save certificate';
-        this.errorService.handleError(err, 'saving certificates');
+        this.savingError = `Failed to ${this.isEditMode ? 'update' : 'create'} certificate`;
+        this.errorService.handleError(err, `${this.isEditMode ? 'Updating' : 'Creating'} certificate`);
         this.isSaving = false;
         this.showRetry = true;
       }
@@ -176,7 +182,7 @@ export class CertificateFormComponent implements OnInit {
     return {
       name: formValue.name,
       commonName: formValue.commonName,
-      san: formValue.commonName,
+      san: formValue.san,
       owner: formValue.owner,
       description: formValue.description,
       team: formValue.team,
@@ -201,5 +207,16 @@ export class CertificateFormComponent implements OnInit {
     } else {
       this.router.navigate(['/certificates']);
     }
+  }
+
+  retryLoading(): void {
+    if (this.isEditMode && this.certificateId) {
+      this.loadCertificate(this.certificateId);
+    }
+    this.loadAuthorities();
+  }
+
+  dismissError(): void {
+    this.loadingError = '';
   }
 }

@@ -1,10 +1,13 @@
-// src/app/certificates/components/certificate-detail/certificate-detail.component.ts
+// Path: frontend/RuffedLemur/src/app/certificates/components/certificate-detail/certificate-detail.component.ts
+
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { Certificate } from '../../../shared/models/certificate.model';
 import { CertificateService } from '../../services/certificate.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { finalize } from 'rxjs/operators';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-certificate-detail',
@@ -24,7 +27,8 @@ export class CertificateDetailComponent implements OnInit {
     private errorService: ErrorService,
     private dialog: MatDialog
   ) {
-    this.certificateId = +this.route.snapshot.paramMap.get('id')!;
+    const id = this.route.snapshot.paramMap.get('id');
+    this.certificateId = id ? parseInt(id, 10) : 0;
   }
 
   ngOnInit(): void {
@@ -33,18 +37,21 @@ export class CertificateDetailComponent implements OnInit {
 
   loadCertificate(): void {
     this.isLoading = true;
+    this.error = '';
 
-    this.certificateService.getCertificate(this.certificateId).subscribe({
-      next: (data) => {
-        this.certificate = data;
-        this.isLoading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load certificate details';
-        this.errorService.logError(err);
-        this.isLoading = false;
-      }
-    });
+    this.certificateService.getCertificate(this.certificateId)
+      .pipe(
+        finalize(() => this.isLoading = false)
+      )
+      .subscribe({
+        next: (data) => {
+          this.certificate = data;
+        },
+        error: (err) => {
+          this.error = 'Failed to load certificate details';
+          this.errorService.handleError(err, 'Loading certificate details');
+        }
+      });
   }
 
   getCertificateStatus(): string {
@@ -87,28 +94,40 @@ export class CertificateDetailComponent implements OnInit {
         a.remove();
       },
       error: (err) => {
-        this.errorService.logError(err);
-        // Show error toast or notification
+        this.errorService.handleError(err, `Exporting certificate in ${format} format`);
       }
     });
   }
 
   openRevokeDialog(): void {
-    //TO DO: implement this with a dialog component later
-    if (confirm('Are you sure you want to revoke this certificate?')) {
-      this.revokeCertificate('Manual revocation');
-    }
+    if (!this.certificate) return;
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Revoke Certificate',
+        message: `Are you sure you want to revoke certificate <strong>"${this.certificate.name}"</strong>?<br><br>This action cannot be undone.`,
+        confirmButtonText: 'Revoke',
+        cancelButtonText: 'Cancel',
+        type: 'danger'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.revokeCertificate('Manual revocation');
+      }
+    });
   }
 
   revokeCertificate(reason: string): void {
     this.certificateService.revokeCertificate(this.certificateId, reason).subscribe({
       next: (data) => {
         this.certificate = data;
-        // Show success toast or notification
+        this.errorService.showSuccess('Certificate revoked successfully');
       },
       error: (err) => {
-        this.errorService.logError(err);
-        // Show error toast or notification
+        this.errorService.handleError(err, 'Revoking certificate');
       }
     });
   }
@@ -119,5 +138,9 @@ export class CertificateDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/certificates']);
+  }
+
+  retryLoading(): void {
+    this.loadCertificate();
   }
 }
