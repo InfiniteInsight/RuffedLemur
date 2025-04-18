@@ -30,6 +30,11 @@ export class CertificateDetailComponent implements OnInit {
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     this.certificateId = id ? idToNumber(id) : 0;
+
+    if (isNaN(this.certificateId)) {
+      //Handle invalid ID with an error
+      this.errorService.showError('Invalid certificate ID')
+    }
   }
 
   ngOnInit(): void {

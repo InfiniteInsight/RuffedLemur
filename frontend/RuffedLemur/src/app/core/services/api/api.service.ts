@@ -121,6 +121,15 @@ export class ApiService {
       return response.data;
     }
 
+    // Add better handling for unexpected formats
+    if (response === null || response === undefined) {
+      throw new Error('Server returned empty response');
+    }
+
+    if (typeof response !== 'object') {
+      throw new Error(`Unexpected response format: ${typeof response}`);
+    }
+
     // If it's already the expected type
     return response as T;
   }

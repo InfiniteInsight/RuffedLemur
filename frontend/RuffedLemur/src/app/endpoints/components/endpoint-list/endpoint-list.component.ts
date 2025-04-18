@@ -4,6 +4,11 @@ import { PageEvent } from '@angular/material/paginator';
 import { Endpoint } from '../../../shared/models/endpoint.model';
 import { EndpointService } from '../../services/endpoint.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+
+
+
 
 @Component({
   selector: 'app-endpoint-list',
@@ -27,7 +32,8 @@ export class EndpointListComponent implements OnInit {
 
   constructor(
     private endpointService: EndpointService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {

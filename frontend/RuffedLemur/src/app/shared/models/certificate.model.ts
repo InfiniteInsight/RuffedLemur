@@ -1,6 +1,6 @@
 // frontend/RuffedLemur/src/app/shared/models/certificate.model.ts
 export interface Certificate {
-  id: string | number;  // Change to string for UUID compatibility
+  id: string | number;  // added string for UUID compatibility
   name: string;
   owner: string;
   description?: string;
@@ -8,7 +8,7 @@ export interface Certificate {
   chain?: string;
   body: string;
   private_key?: string;
-  cn: string;
+  //cn: string;
   serial: string;
   status?: string;
   notBefore: string;
