@@ -1,4 +1,5 @@
-// Path: frontend/RuffedLemur/src/app/core/services/api/api.service.ts
+// frontend/RuffedLemur/src/app/core/services/api/api.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
@@ -6,13 +7,20 @@ import { catchError, tap, map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { ErrorService } from '../error/error.service';
 
-export interface ApiResponse<T> {
+// Define response types
+export interface StandardApiResponse<T> {
   status: 'success' | 'error';
-  data?: T;
+  data: T;
   message?: string;
   error?: string;
   code?: number;
 }
+
+export interface SimpleApiResponse<T> {
+  data: T;
+}
+
+export type ApiResponse<T> = StandardApiResponse<T> | SimpleApiResponse<T> | T;
 
 @Injectable({
   providedIn: 'root'
@@ -26,7 +34,7 @@ export class ApiService {
   ) {}
 
   /**
-   * Generic GET request
+   * GET request
    * @param endpoint The API endpoint
    * @param params Optional query parameters
    * @param options Optional HTTP options
@@ -36,16 +44,16 @@ export class ApiService {
     const httpParams = this.buildHttpParams(params);
     const httpOptions = this.buildHttpOptions(options);
 
-    return this.http.get<ApiResponse<T>>(url, { ...httpOptions, params: httpParams })
+    return this.http.get(url, { ...httpOptions, params: httpParams })
       .pipe(
         tap(response => this.logSuccess(endpoint, response)),
-        map(response => this.extractData<T>(response)),
+        map(response => this.processResponse<T>(response)),
         catchError(error => this.handleError(error, `GET ${endpoint}`))
       );
   }
 
   /**
-   * Generic POST request
+   * POST request
    * @param endpoint The API endpoint
    * @param body The request body
    * @param options Optional HTTP options
@@ -54,16 +62,16 @@ export class ApiService {
     const url = `${this.apiUrl}/${endpoint}`;
     const httpOptions = this.buildHttpOptions(options);
 
-    return this.http.post<ApiResponse<T>>(url, body, httpOptions)
+    return this.http.post(url, body, httpOptions)
       .pipe(
         tap(response => this.logSuccess(endpoint, response)),
-        map(response => this.extractData<T>(response)),
+        map(response => this.processResponse<T>(response)),
         catchError(error => this.handleError(error, `POST ${endpoint}`))
       );
   }
 
   /**
-   * Generic PUT request
+   * PUT request
    * @param endpoint The API endpoint
    * @param body The request body
    * @param options Optional HTTP options
@@ -72,16 +80,16 @@ export class ApiService {
     const url = `${this.apiUrl}/${endpoint}`;
     const httpOptions = this.buildHttpOptions(options);
 
-    return this.http.put<ApiResponse<T>>(url, body, httpOptions)
+    return this.http.put(url, body, httpOptions)
       .pipe(
         tap(response => this.logSuccess(endpoint, response)),
-        map(response => this.extractData<T>(response)),
+        map(response => this.processResponse<T>(response)),
         catchError(error => this.handleError(error, `PUT ${endpoint}`))
       );
   }
 
   /**
-   * Generic DELETE request
+   * DELETE request
    * @param endpoint The API endpoint
    * @param options Optional HTTP options
    */
@@ -89,23 +97,52 @@ export class ApiService {
     const url = `${this.apiUrl}/${endpoint}`;
     const httpOptions = this.buildHttpOptions(options);
 
-    return this.http.delete<ApiResponse<T>>(url, httpOptions)
+    return this.http.delete(url, httpOptions)
       .pipe(
         tap(response => this.logSuccess(endpoint, response)),
-        map(response => this.extractData<T>(response)),
+        map(response => this.processResponse<T>(response)),
         catchError(error => this.handleError(error, `DELETE ${endpoint}`))
       );
   }
 
   /**
-   * Extract data from API response
-   * @param response API response
+   * Process API response using type guards
+   * @param response The API response
    */
-  protected extractData<T>(response: ApiResponse<T>): T {
-    if (response.status === 'error') {
-      throw new Error(response.error || response.message || 'Unknown error');
+  protected processResponse<T>(response: unknown): T {
+    if (this.isStandardApiResponse<T>(response)) {
+      if (response.status === 'error') {
+        throw new Error(response.error || response.message || 'Unknown error');
+      }
+      return response.data;
     }
-    return response.data as T;
+
+    if (this.isSimpleApiResponse<T>(response)) {
+      return response.data;
+    }
+
+    // If it's already the expected type
+    return response as T;
+  }
+
+  /**
+   * Type guard for standard API response
+   */
+  private isStandardApiResponse<T>(response: unknown): response is StandardApiResponse<T> {
+    return response !== null &&
+           typeof response === 'object' &&
+           'status' in response &&
+           'data' in response;
+  }
+
+  /**
+   * Type guard for simple API response
+   */
+  private isSimpleApiResponse<T>(response: unknown): response is SimpleApiResponse<T> {
+    return response !== null &&
+           typeof response === 'object' &&
+           'data' in response &&
+           !('status' in response);
   }
 
   /**
@@ -113,7 +150,7 @@ export class ApiService {
    * @param endpoint API endpoint
    * @param response API response
    */
-  protected logSuccess(endpoint: string, response: any): void {
+  protected logSuccess(endpoint: string, response: unknown): void {
     if (environment.logApiResponses) {
       console.log(`API Response [${endpoint}]:`, response);
     }

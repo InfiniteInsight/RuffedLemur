@@ -11,6 +11,7 @@ import { CertificateService } from '../../services/certificate.service';
 import { AuthorityService } from '../../../authorities/services/authority.service';
 import { ErrorService } from '../../../core/services/error/error.service';
 import { ComponentCanDeactivate } from '../../../core/guards/pending-changes.guard';
+import { idToNumber } from '../../../shared/utils/type-guard';
 
 @Component({
   selector: 'app-certificate-form',
@@ -44,7 +45,7 @@ export class CertificateFormComponent implements OnInit, ComponentCanDeactivate 
     // Check if we are in edit mode
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.certificateId = +id;
+      this.certificateId = idToNumber(id);
       this.isEditMode = true;
     }
   }

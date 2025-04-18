@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
 import { Certificate } from '../../shared/models/certificate.model';
 import { ApiService } from '../../core/services/api/api.service';
 import { ErrorService } from '../../core/services/error/error.service';
-
+import { idToString } from '../../shared/utils/type-guard';
 
 export interface PaginatedResponse<T> {
   items: T[];
@@ -47,7 +47,7 @@ export class CertificateService extends ApiService {
    */
   getCertificate(id: string | number): Observable<Certificate> {
     // convert id to string for the URL
-    const certId = id.toString();
+    const certId = idToString(id);
     return this.get<Certificate>(`certificates/${certId}`);
   }
 
@@ -62,7 +62,7 @@ export class CertificateService extends ApiService {
    * Update an existing certificate
    */
   updateCertificate(id: string | number, certificate: Partial<Certificate>): Observable<Certificate> {
-    const certId = id.toString();
+    const certId = idToString(id);
     return this.put<Certificate>(`certificates/${certId}`, certificate);
   }
 
@@ -71,7 +71,7 @@ export class CertificateService extends ApiService {
    */
   revokeCertificate(id: string | number, reason: string): Observable<Certificate> {
     // Convert id to string for the URL
-    const certId = id.toString();
+    const certId = idToString(id);
     return this.post<Certificate>(`certificates/${certId}/revoke`, { reason });
   }
 
@@ -80,7 +80,7 @@ export class CertificateService extends ApiService {
    */
   exportCertificate(id: string | number, format: 'pem' | 'der' | 'pkcs12'): Observable<Blob> {
     // convert id to string for the URL
-    const certId = id.toString();
+    const certId = idToString(id);
     return this.get<Blob>(`certificates/${certId}/export/${format}`, {}, {
       responseType: 'blob'
     });

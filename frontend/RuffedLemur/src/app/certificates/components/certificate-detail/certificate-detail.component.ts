@@ -8,6 +8,7 @@ import { CertificateService } from '../../services/certificate.service';
 import { ErrorService } from '../../../core/services/error/error.service';
 import { finalize } from 'rxjs/operators';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { idToNumber } from '../../../shared/utils/type-guard';
 
 @Component({
   selector: 'app-certificate-detail',
@@ -28,7 +29,7 @@ export class CertificateDetailComponent implements OnInit {
     private dialog: MatDialog
   ) {
     const id = this.route.snapshot.paramMap.get('id');
-    this.certificateId = id ? parseInt(id, 10) : 0;
+    this.certificateId = id ? idToNumber(id) : 0;
   }
 
   ngOnInit(): void {

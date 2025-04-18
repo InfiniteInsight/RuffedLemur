@@ -8,6 +8,7 @@ import { ErrorService } from '../../../core/services/error/error.service';
 import { finalize } from 'rxjs/operators';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
+import { idToNumber } from '../../../shared/utils/type-guard';
 
 @Component({
   selector: 'app-certificate-list',
@@ -141,8 +142,8 @@ export class CertificateListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // Fix the TypeScript error by converting id to number if needed
-        const certId: number = typeof certificate.id === 'string' ? parseInt(certificate.id, 10) : certificate.id;
+        const certId = idToNumber(certificate.id);
+        //const certId: number = typeof certificate.id === 'string' ? parseInt(certificate.id, 10) : certificate.id;
 
         this.certificateService.revokeCertificate(certId, 'Manual revocation').subscribe({
           next: () => {
