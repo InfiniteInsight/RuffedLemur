@@ -136,7 +136,7 @@ export class CertificateSourceListComponent implements OnInit, OnDestroy {
           }
 
           const status = data.active ? 'activated' : 'deactivated';
-          this.notificationService.success(`Source "${source.name}" ${status} successfully`);
+          this.notificationService.success(`Source "${source.label}" ${status} successfully`);
         },
         error: (err) => {
           this.errorService.logError(err);
@@ -156,7 +156,7 @@ export class CertificateSourceListComponent implements OnInit, OnDestroy {
       width: '400px',
       data: {
         title: 'Delete Source',
-        message: `Are you sure you want to delete "${source.name}"? This action cannot be undone.`,
+        message: `Are you sure you want to delete "${source.label}"? This action cannot be undone.`,
         confirmButtonText: 'Delete',
         cancelButtonText: 'Cancel',
         type: 'danger'
@@ -170,11 +170,11 @@ export class CertificateSourceListComponent implements OnInit, OnDestroy {
           .subscribe({
             next: () => {
               this.loadSources();
-              this.notificationService.success(`Source "${source.name}" deleted successfully`);
+              this.notificationService.success(`Source "${source.label}" deleted successfully`);
             },
             error: (err) => {
               this.errorService.logError(err);
-              this.notificationService.error(`Failed to delete source "${source.name}"`);
+              this.notificationService.error(`Failed to delete source "${source.label}"`);
             }
           });
       }
@@ -193,10 +193,10 @@ export class CertificateSourceListComponent implements OnInit, OnDestroy {
 
           if (total > 0) {
             this.notificationService.success(
-              `Successfully imported ${result.imported} and updated ${result.updated} certificates from "${source.name}"`
+              `Successfully imported ${result.imported} and updated ${result.updated} certificates from "${source.label}"`
             );
           } else {
-            this.notificationService.info(`No new certificates found in "${source.name}"`);
+            this.notificationService.info(`No new certificates found in "${source.label}"`);
           }
 
           if (result.failed > 0) {
@@ -206,7 +206,7 @@ export class CertificateSourceListComponent implements OnInit, OnDestroy {
         error: (err) => {
           this.importingSourceId = null;
           this.errorService.logError(err);
-          this.notificationService.error(`Failed to import certificates from "${source.name}"`);
+          this.notificationService.error(`Failed to import certificates from "${source.label}"`);
         }
       });
   }

@@ -19,7 +19,7 @@
   <div *ngIf="!isLoading && !error && source" class="source-content">
     <mat-card class="source-card">
       <mat-card-header>
-        <mat-card-title>{{ source.name }}</mat-card-title>
+        <mat-card-title>{{ source.label }}</mat-card-title>
         <mat-card-subtitle>{{ source.description || 'No description' }}</mat-card-subtitle>
         <div class="status-chip" [ngClass]="{'active-status': source.active, 'inactive-status': !source.active}">
           {{ source.active ? 'Active' : 'Inactive' }}
@@ -32,7 +32,7 @@
             <h3>Basic Information</h3>
             <div class="info-grid">
               <div class="info-label">Name</div>
-              <div class="info-value">{{ source.name }}</div>
+              <div class="info-value">{{ source.label }}</div>
 
               <div class="info-label">Plugin</div>
               <div class="info-value">{{ getPluginLabel(source.plugin) }}</div>

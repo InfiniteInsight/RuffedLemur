@@ -1,6 +1,6 @@
 export interface CertificateSource {
   id?: number;
-  name: string;
+  label: string; //aka name
   description?: string;
   plugin: SourcePlugin;
   pluginOptions: any;

@@ -102,7 +102,7 @@ export class CertificateSourceDetailComponent implements OnInit, OnDestroy {
         next: (data) => {
           this.source!.active = data.active;
           const status = data.active ? 'activated' : 'deactivated';
-          this.notificationService.success(`Source "${this.source!.name}" ${status} successfully`);
+          this.notificationService.success(`Source "${this.source!.label}" ${status} successfully`);
 
           // If activated, load stats
           if (data.active) {
@@ -130,10 +130,10 @@ export class CertificateSourceDetailComponent implements OnInit, OnDestroy {
 
           if (total > 0) {
             this.notificationService.success(
-              `Successfully imported ${result.imported} and updated ${result.updated} certificates from "${this.source!.name}"`
+              `Successfully imported ${result.imported} and updated ${result.updated} certificates from "${this.source!.label}"`
             );
           } else {
-            this.notificationService.info(`No new certificates found in "${this.source!.name}"`);
+            this.notificationService.info(`No new certificates found in "${this.source!.label}"`);
           }
 
           if (result.failed > 0) {
@@ -146,7 +146,7 @@ export class CertificateSourceDetailComponent implements OnInit, OnDestroy {
         error: (err) => {
           this.isImporting = false;
           this.errorService.logError(err);
-          this.notificationService.error(`Failed to import certificates from "${this.source!.name}"`);
+          this.notificationService.error(`Failed to import certificates from "${this.source!.label}"`);
         }
       });
   }
@@ -158,7 +158,7 @@ export class CertificateSourceDetailComponent implements OnInit, OnDestroy {
       width: '400px',
       data: {
         title: 'Delete Source',
-        message: `Are you sure you want to delete "${this.source.name}"? This action cannot be undone.`,
+        message: `Are you sure you want to delete "${this.source.label}"? This action cannot be undone.`,
         confirmButtonText: 'Delete',
         cancelButtonText: 'Cancel',
         type: 'danger'
@@ -171,12 +171,12 @@ export class CertificateSourceDetailComponent implements OnInit, OnDestroy {
           .pipe(takeUntil(this.destroy$))
           .subscribe({
             next: () => {
-              this.notificationService.success(`Source "${this.source!.name}" deleted successfully`);
+              this.notificationService.success(`Source "${this.source!.label}" deleted successfully`);
               this.router.navigate(['/certificatesources']);
             },
             error: (err) => {
               this.errorService.logError(err);
-              this.notificationService.error(`Failed to delete source "${this.source!.name}"`);
+              this.notificationService.error(`Failed to delete source "${this.source!.label}"`);
             }
           });
       }

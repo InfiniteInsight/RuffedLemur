@@ -33,10 +33,10 @@
             <mat-form-field appearance="outline" class="form-field">
               <mat-label>Name</mat-label>
               <input matInput formControlName="name" placeholder="Source name">
-              <mat-error *ngIf="sourceForm.get('name')?.hasError('required')">
+              <mat-error *ngIf="sourceForm.get('label')?.hasError('required')">
                 Name is required
               </mat-error>
-              <mat-error *ngIf="sourceForm.get('name')?.hasError('minlength')">
+              <mat-error *ngIf="sourceForm.get('label')?.hasError('minlength')">
                 Name must be at least 3 characters
               </mat-error>
             </mat-form-field>

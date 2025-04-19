@@ -77,7 +77,7 @@ export class CertificateSourceFormComponent implements OnInit, OnDestroy, Compon
 
   private createForm(): FormGroup {
     return this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(3)]],
+      label: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
       plugin: [SourcePlugin.CUSTOM, [Validators.required]],
       active: [true],
@@ -186,7 +186,7 @@ export class CertificateSourceFormComponent implements OnInit, OnDestroy, Compon
           setTimeout(() => {
             // Patch form values
             this.sourceForm.patchValue({
-              name: source.name,
+              label: source.label,
               description: source.description || '',
               plugin: source.plugin,
               active: source.active,
@@ -280,7 +280,7 @@ export class CertificateSourceFormComponent implements OnInit, OnDestroy, Compon
     const formValue = this.sourceForm.value;
 
     return {
-      name: formValue.name,
+      label: formValue.label,
       description: formValue.description || null,
       plugin: formValue.plugin,
       pluginOptions: formValue.pluginOptions,
