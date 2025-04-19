@@ -1,5 +1,5 @@
 export interface Notification {
-  id?: number;
+  id?: string | number;
   message: string;
   subject: string;
   type: NotificationType;
@@ -43,7 +43,7 @@ export interface NotificationConfig {
   createdAt?: Date;
   updatedAt?: Date;
   smtpServer: string;
-  stmpPort: number;
+  smtpPort: number;
   smtpUser?: string;
   smtpPassword?: string;
 }

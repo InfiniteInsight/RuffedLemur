@@ -1,14 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   Notification,
   NotificationConfig,
   NotificationType,
   NotificationPlugin
-
-} from '../../shared/models/notification.model'
+} from '../../shared/models/notification.model';
+import { AuthService } from '../../core/services/auth/auth.service';
+import { isStringId, idToString } from '../../shared/utils/type-guard';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -34,7 +36,6 @@ interface NotificationConfigListParams {
   active?: boolean;
 }
 
-
 @Injectable({
   providedIn: 'root'
 })
@@ -42,10 +43,12 @@ export class NotificationService {
   private apiUrl = `${environment.apiUrl}/notifications`;
   private configApiUrl = `${environment.apiUrl}/notification-configurations`;
 
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { }
 
-  constructor(private http: HttpClient) { }
-
-  //User Notification Methods
+  // User Notification Methods
   getNotifications(params: NotificationListParams = {}): Observable<PaginatedResponse<Notification>> {
     let httpParams = new HttpParams();
 
@@ -75,27 +78,78 @@ export class NotificationService {
     return this.http.get<PaginatedResponse<Notification>>(this.apiUrl, { params: httpParams });
   }
 
-  getNotification(id: number): Observable<Notification> {
-    return this.http.get<Notification>(`${this.apiUrl}/${id}`);
+  getNotification(id: string | number): Observable<Notification> {
+    return this.http.get<Notification>(`${this.apiUrl}/${idToString(id)}`);
   }
 
-  markAsRead(id: number): Observable<Notification> {
-    return this.http.post<Notification>(`${this.apiUrl}/${id}/read`, {});
+  markAsRead(id: string | number): Observable<Notification> {
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<Notification>(
+          `${this.apiUrl}/${idToString(id)}/read`,
+          {},
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
   markAllAsRead(): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/read-all`, {});
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<void>(
+          `${this.apiUrl}/read-all`,
+          {},
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
-  deleteNotification(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  deleteNotification(id: string | number): Observable<void> {
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.delete<void>(
+          `${this.apiUrl}/${idToString(id)}`,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
   sendNotification(notification: Partial<Notification>): Observable<Notification> {
-    return this.http.post<Notification>(`${this.apiUrl}/send`, notification);
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<Notification>(
+          `${this.apiUrl}/send`,
+          notification,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
-  //Notification Configuration Methods
+  // Notification Configuration Methods
   getNotificationConfigs(params: NotificationConfigListParams = {}): Observable<PaginatedResponse<NotificationConfig>> {
     let httpParams = new HttpParams();
 
@@ -122,20 +176,60 @@ export class NotificationService {
     return this.http.get<PaginatedResponse<NotificationConfig>>(this.configApiUrl, { params: httpParams });
   }
 
-  getNotificationConfig(id: number): Observable<NotificationConfig> {
-    return this.http.get<NotificationConfig>(`${this.configApiUrl}/$${id}`);
+  getNotificationConfig(id: string | number): Observable<NotificationConfig> {
+    // Fixed URL formatting - removed extra $ character
+    return this.http.get<NotificationConfig>(`${this.configApiUrl}/${idToString(id)}`);
   }
 
   createNotificationConfig(config: Partial<NotificationConfig>): Observable<NotificationConfig> {
-    return this.http.post<NotificationConfig>(this.configApiUrl, config);
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<NotificationConfig>(
+          this.configApiUrl,
+          config,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
-  updateNotificationConfig(id: number, config: Partial<NotificationConfig>): Observable<NotificationConfig> {
-    return this.http.post<NotificationConfig>(this.configApiUrl, config);
+  updateNotificationConfig(id: string | number, config: Partial<NotificationConfig>): Observable<NotificationConfig> {
+    // Fixed to use PUT and proper endpoint
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.put<NotificationConfig>(
+          `${this.configApiUrl}/${idToString(id)}`,
+          config,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
-  deleteNotificationConfig(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.configApiUrl}/${id}`);
+  deleteNotificationConfig(id: string | number): Observable<void> {
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.delete<void>(
+          `${this.configApiUrl}/${idToString(id)}`,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
   getNotificationPlugins(): Observable<string[]> {
@@ -143,33 +237,88 @@ export class NotificationService {
   }
 
   testNotificationConfig(config: Partial<NotificationConfig>): Observable<any> {
-    return this.http.post<any>(`${this.configApiUrl}/test`, config);
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<any>(
+          `${this.configApiUrl}/test`,
+          config,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
-  //methods for handling file uploads for attachments
+  // Methods for handling file uploads for attachments
   uploadAttachment(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('file', file, file.name);
 
-    return this.http.post<any>(`${this.apiUrl}/upload-attachment`, formData);
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<any>(
+          `${this.apiUrl}/upload-attachment`,
+          formData,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
   // Methods for handling specific notifications
-  sendCsvReport(certificateIds: number[], recipients: string[], subject?: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/csv-report`, {
-      certificateIds,
-      recipients,
-      subject: subject || 'Certificate Expiration Report'
-    });
+  sendCsvReport(certificateIds: (string | number)[], recipients: string[], subject?: string): Observable<any> {
+    // Convert all IDs to strings
+    const stringIds = certificateIds.map(id => idToString(id));
+
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<any>(
+          `${this.apiUrl}/csv-report`,
+          {
+            certificateIds: stringIds,
+            recipients,
+            subject: subject || 'Certificate Expiration Report'
+          },
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
-  //Validate SMTP config
+  // Validate SMTP config
   testSmtpConnection(config: Partial<NotificationConfig>): Observable<any> {
-    return this.http.post<any>(`${this.configApiUrl}/test-smtp`, {
-      smtpServer: config.smtpServer,
-      smtpPort: config.stmpPort,
-      smtpUser: config.smtpUser,
-      smtpPassword: config.smtpPassword
-    });
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<any>(
+          `${this.configApiUrl}/test-smtp`,
+          {
+            smtpServer: config.smtpServer,
+            smtpPort: config.smtpPort,
+            smtpUser: config.smtpUser,
+            smtpPassword: config.smtpPassword
+          },
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 }
