@@ -63,16 +63,10 @@
                   <div class="info-label">{{ option.key | titlecase }}</div>
                   <div class="info-value">
                     <!-- Hide password values -->
-                    <ng-container *ngIf="option.key.toLowerCase().includes('password') ||
-                                         option.key.toLowerCase().includes('secret') ||
-                                         option.key.toLowerCase().includes('key') &&
-                                         option.key.toLowerCase() !== 'public_key'">
+                    <ng-container *ngIf="isSensitiveField(option.key)">
                       ••••••••
                     </ng-container>
-                    <ng-container *ngIf="!option.key.toLowerCase().includes('password') &&
-                                         !option.key.toLowerCase().includes('secret') &&
-                                         !(option.key.toLowerCase().includes('key') &&
-                                           option.key.toLowerCase() !== 'public_key')">
+                    <ng-container *ngIf="isSensitiveField(option.key)">
                       {{ option.value }}
                     </ng-container>
                   </div>

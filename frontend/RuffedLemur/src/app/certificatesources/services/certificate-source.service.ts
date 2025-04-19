@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CertificateSource, SourcePlugin } from '../../shared/models/certificate-source.model';
 
@@ -19,6 +19,14 @@ interface SourceListParams {
   active?: boolean;
 }
 
+export interface SourceStats {
+  totalCertificates: number;
+  activeCertificates: number;
+  expiredCertificates: number;
+  expiringSoonCertificates: number;
+  lastSync?: Date;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -26,6 +34,10 @@ export class CertificateSourceService {
   private apiUrl = `${environment.apiUrl}/sources`;
 
   constructor(private http: HttpClient) { }
+
+  getSourceSchema(plugin: SourcePlugin): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/plugins/${plugin}/schema`);
+  }
 
   getSources(params: SourceListParams = {}): Observable<PaginatedResponse<CertificateSource>> {
     let httpParams = new HttpParams();
@@ -57,6 +69,21 @@ export class CertificateSourceService {
     return this.http.get<CertificateSource>(`${this.apiUrl}/${id}`);
   }
 
+  getSourceStats(id: number): Observable<SourceStats> {
+    return this.http.get<SourceStats>(`${this.apiUrl}/${id}/stats`);
+  }
+
+  //getSourcePlugins(): Observable<string[]> {
+  //  return this.http.get<string[]>(`${environment.apiUrl}/plugins/source`);
+  //}
+
+  getSourcePlugins(): Observable<SourcePlugin[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/plugins/source`)
+      .pipe(
+        map(plugins => plugins.map(plugin => plugin as unknown as SourcePlugin))
+      );
+  }
+
   createSource(source: Partial<CertificateSource>): Observable<CertificateSource> {
     return this.http.post<CertificateSource>(this.apiUrl, source);
   }
@@ -67,10 +94,6 @@ export class CertificateSourceService {
 
   deleteSource(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
-  }
-
-  getSourcePlugins(): Observable<string[]> {
-    return this.http.get<string[]>(`${environment.apiUrl}/plugins/source`);
   }
 
   testSourceConfiguration(source: Partial<CertificateSource>): Observable<any> {

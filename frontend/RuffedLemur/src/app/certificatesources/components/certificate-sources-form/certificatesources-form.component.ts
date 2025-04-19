@@ -9,13 +9,14 @@ import { CertificateSource, SourcePlugin } from '../../../shared/models/certific
 import { CertificateSourceService } from '../../services/certificate-source.service';
 import { ErrorService } from '../../../core/services/error/error.service';
 import { ApiNotificationService } from '../../../core/services/api-notification/api-notification.service';
+import { ComponentCanDeactivate } from '../../../core/guards/pending-changes.guard';
 
 @Component({
   selector: 'app-certificate-source-form',
   templateUrl: './certificate-source-form.component.html',
   styleUrls: ['./certificate-source-form.component.scss']
 })
-export class CertificateSourceFormComponent implements OnInit, OnDestroy {
+export class CertificateSourceFormComponent implements OnInit, OnDestroy, ComponentCanDeactivate {
   private destroy$ = new Subject<void>();
 
   sourceForm: FormGroup;
@@ -84,11 +85,16 @@ export class CertificateSourceFormComponent implements OnInit, OnDestroy {
     });
   }
 
+  canDeactivate(): boolean {
+    // Return true if there are no pending changes, or false if there are
+    return !this.sourceForm.dirty;
+  }
+
   loadPlugins(): void {
     this.sourceService.getSourcePlugins()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (plugins) => {
+        next: (plugins: SourcePlugin[]) => {
           this.availablePlugins = plugins;
 
           // Set default selection if we have plugins and no selection yet
@@ -97,9 +103,9 @@ export class CertificateSourceFormComponent implements OnInit, OnDestroy {
             this.loadPluginSchema(plugins[0]);
           }
         },
-        error: (err) => {
+        error: (error: Error) => {
           this.error = 'Failed to load source plugins';
-          this.errorService.logError(err);
+          this.errorService.logError(error);
           this.notificationService.error('Failed to load source plugins');
         }
       });

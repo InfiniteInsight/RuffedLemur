@@ -9,6 +9,8 @@ import { ApiNotificationService } from '../../../core/services/api-notification/
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-certificate-source-list',
@@ -39,7 +41,8 @@ export class CertificateSourceListComponent implements OnInit, OnDestroy {
     private sourceService: CertificateSourceService,
     private errorService: ErrorService,
     private notificationService: ApiNotificationService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -149,20 +152,33 @@ export class CertificateSourceListComponent implements OnInit, OnDestroy {
   }
 
   deleteSource(source: CertificateSource): void {
-    if (confirm(`Are you sure you want to delete "${source.name}"? This action cannot be undone.`)) {
-      this.sourceService.deleteSource(source.id!)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.loadSources();
-            this.notificationService.success(`Source "${source.name}" deleted successfully`);
-          },
-          error: (err) => {
-            this.errorService.logError(err);
-            this.notificationService.error(`Failed to delete source "${source.name}"`);
-          }
-        });
-    }
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Source',
+        message: `Are you sure you want to delete "${source.name}"? This action cannot be undone.`,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        type: 'danger'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.sourceService.deleteSource(source.id!)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.loadSources();
+              this.notificationService.success(`Source "${source.name}" deleted successfully`);
+            },
+            error: (err) => {
+              this.errorService.logError(err);
+              this.notificationService.error(`Failed to delete source "${source.name}"`);
+            }
+          });
+      }
+    });
   }
 
   importCertificates(source: CertificateSource): void {
