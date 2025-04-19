@@ -1,10 +1,13 @@
 // src/app/endpoints/services/endpoint.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Endpoint } from '../../shared/models/endpoint.model';
 import { Certificate } from '../../shared/models/certificate.model';
+import { isStringId, isNumberId, idToString, idToNumber } from '../../shared/utils/type-guard';
+import { AuthService } from '../../core/services/auth/auth.service';
+
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -27,7 +30,10 @@ interface EndpointListParams {
 export class EndpointService {
   private apiUrl = `${environment.apiUrl}/endpoints`;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { }
 
   getEndpoints(params: EndpointListParams = {}): Observable<PaginatedResponse<Endpoint>> {
     let httpParams = new HttpParams();
@@ -54,28 +60,66 @@ export class EndpointService {
     return this.http.get<PaginatedResponse<Endpoint>>(this.apiUrl, { params: httpParams });
   }
 
-  getEndpoint(id: number): Observable<Endpoint> {
-    return this.http.get<Endpoint>(`${this.apiUrl}/${id}`);
+  getEndpoint(id: string | number): Observable<Endpoint> {
+    return this.http.get<Endpoint>(`${this.apiUrl}/${idToString(id)}`);
   }
 
   createEndpoint(endpoint: Partial<Endpoint>): Observable<Endpoint> {
-    return this.http.post<Endpoint>(this.apiUrl, endpoint);
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.post<Endpoint>(
+          this.apiUrl,
+          endpoint,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
-  updateEndpoint(id: number, endpoint: Partial<Endpoint>): Observable<Endpoint> {
-    return this.http.put<Endpoint>(`${this.apiUrl}/${id}`, endpoint);
+  updateEndpoint(id: string | number, endpoint: Partial<Endpoint>): Observable<Endpoint> {
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.put<Endpoint>(
+          `${this.apiUrl}/${idToString(id)}`,
+          endpoint,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
-  deleteEndpoint(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  deleteEndpoint(id: string | number): Observable<void> {
+    return this.authService.getCsrfToken().pipe(
+      switchMap(csrfResponse => {
+        return this.http.delete<void>(
+          `${this.apiUrl}/${idToString(id)}`,
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrfResponse.token
+            },
+            withCredentials: true
+          }
+        );
+      })
+    );
   }
 
   getEndpointTypes(): Observable<string[]> {
     return this.http.get<string[]>(`${this.apiUrl}/types`);
   }
 
-  getCertificatesByEndpoint(id: number): Observable<Certificate[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/${id}/certificates`);
+  getCertificatesByEndpoint(id: string | number): Observable<Certificate[]> {
+    return this.http.get<Certificate[]>(`${this.apiUrl}/${idToString(id)}/certificates`);
   }
 }
 

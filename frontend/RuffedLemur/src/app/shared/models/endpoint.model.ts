@@ -1,6 +1,6 @@
 // src/app/shared/models/endpoint.model.ts
 export interface Endpoint {
-  id?: number;
+  id?: string | number;
   name: string;
   description?: string;
   owner: string;

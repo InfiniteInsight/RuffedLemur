@@ -10,6 +10,7 @@ import { EndpointService } from '../../services/endpoint.service';
 import { ErrorService } from '../../../core/services/error/error.service';
 import { ApiNotificationService } from '../../../core/services/api-notification/api-notification.service';
 import { ComponentCanDeactivate } from '../../../core/guards/pending-changes.guard';
+import { isStringId, idToString } from '../../../shared/utils/type-guard';
 
 @Component({
   selector: 'app-endpoint-form',
@@ -20,7 +21,7 @@ export class EndpointFormComponent implements OnInit, OnDestroy, ComponentCanDea
   private destroy$ = new Subject<void>();
 
   endpointForm: FormGroup;
-  endpointId: number | null = null;
+  endpointId: string | number | null = null;
   isEditMode = false;
   isLoading = false;
   isSaving = false;
@@ -41,7 +42,7 @@ export class EndpointFormComponent implements OnInit, OnDestroy, ComponentCanDea
     // Check if we are in edit mode
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.endpointId = +id;
+      this.endpointId = id;
       this.isEditMode = true;
     }
   }
@@ -117,7 +118,7 @@ export class EndpointFormComponent implements OnInit, OnDestroy, ComponentCanDea
     this.endpointForm.markAsDirty();
   }
 
-  loadEndpoint(id: number): void {
+  loadEndpoint(id: string | number): void {
     this.isLoading = true;
     this.error = '';
 
