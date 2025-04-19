@@ -1,0 +1,104 @@
+// frontend/RuffedLemur/src/app/dashboard/components/expiring-certs-widget/expiring-certs-widget.component.scss
+
+.expiring-certs-container {
+  margin-bottom: 24px;
+}
+
+.table-card {
+  overflow: hidden; // Keeps the table inside the card boundaries
+}
+
+.expiring-table {
+  width: 100%;
+
+  .mat-column-name {
+    min-width: 200px;
+  }
+
+  .mat-column-commonName {
+    min-width: 200px;
+  }
+
+  .mat-column-expirationDate {
+    width: 100px;
+  }
+
+  .mat-column-daysUntilExpiration {
+    width: 100px;
+
+    mat-icon {
+      vertical-align: middle;
+      font-size: 18px;
+      height: 18px;
+      width: 18px;
+      margin-left: 4px;
+    }
+  }
+
+  .mat-column-actions {
+    width: 100px;
+    text-align: right;
+  }
+}
+
+.cert-subtitle {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.54);
+  margin-top: 4px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.error-message {
+  color: #f44336;
+  padding: 16px;
+  background-color: #ffebee;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 24px;
+  color: rgba(0, 0, 0, 0.6);
+  font-style: italic;
+}
+
+.view-all-link {
+  text-align: right;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+// Severity classes for expiration countdown
+.critical {
+  color: #f44336;
+  font-weight: 700;
+}
+
+.warning {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.normal {
+  color: #2196f3;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .expiring-table {
+    // Make table scroll horizontally on small screens
+    display: block;
+    overflow-x: auto;
+
+    .mat-column-name,
+    .mat-column-commonName {
+      min-width: 150px;
+    }
+  }
+}

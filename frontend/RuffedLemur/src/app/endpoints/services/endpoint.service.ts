@@ -4,6 +4,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Endpoint } from '../../shared/models/endpoint.model';
+import { Certificate } from '../../shared/models/certificate.model';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -73,7 +74,7 @@ export class EndpointService {
     return this.http.get<string[]>(`${this.apiUrl}/types`);
   }
 
-  getCertificatesByEndpoint(id: number): Observable<any[]> {
+  getCertificatesByEndpoint(id: number): Observable<Certificate[]> {
     return this.http.get<any[]>(`${this.apiUrl}/${id}/certificates`);
   }
 }

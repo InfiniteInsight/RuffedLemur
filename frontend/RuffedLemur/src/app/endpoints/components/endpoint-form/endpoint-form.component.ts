@@ -1,17 +1,24 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+// frontend/RuffedLemur/src/app/endpoints/components/endpoint-form/endpoint-form.component.ts
+
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, FormArray, AbstractControl } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { Endpoint, EndpointType } from '../../../shared/models/endpoint.model';
 import { EndpointService } from '../../services/endpoint.service';
 import { ErrorService } from '../../../core/services/error/error.service';
+import { ApiNotificationService } from '../../../core/services/api-notification/api-notification.service';
+import { ComponentCanDeactivate } from '../../../core/guards/pending-changes.guard';
 
 @Component({
   selector: 'app-endpoint-form',
   templateUrl: './endpoint-form.component.html',
   styleUrls: ['./endpoint-form.component.scss']
 })
-export class EndpointFormComponent implements OnInit {
+export class EndpointFormComponent implements OnInit, OnDestroy, ComponentCanDeactivate {
+  private destroy$ = new Subject<void>();
+
   endpointForm: FormGroup;
   endpointId: number | null = null;
   isEditMode = false;
@@ -25,7 +32,8 @@ export class EndpointFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private endpointService: EndpointService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private notificationService: ApiNotificationService
   ) {
     // Initialize form with empty values
     this.endpointForm = this.createForm();
@@ -44,14 +52,27 @@ export class EndpointFormComponent implements OnInit {
     }
 
     // Show/hide fields based on endpoint type
-    this.endpointForm.get('type')?.valueChanges.subscribe(type => {
-      this.updateEndpointTypeFields(type);
-    });
+    this.endpointForm.get('type')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(type => {
+        this.updateEndpointTypeFields(type);
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // Implement canDeactivate method for pending changes guard
+  canDeactivate(): boolean | Observable<boolean> {
+    // Return true if there are no pending changes
+    return !this.endpointForm.dirty || this.isSaving;
   }
 
   private createForm(): FormGroup {
     return this.fb.group({
-      name: ['', [Validators.required]],
+      name: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
       owner: ['', [Validators.required]],
       type: [EndpointType.CUSTOM, [Validators.required]],
@@ -76,72 +97,79 @@ export class EndpointFormComponent implements OnInit {
   }
 
   // Helper getter for customFields FormArray
-  get customFields() {
+  get customFields(): FormArray {
     return this.endpointForm.get('options.customFields') as FormArray;
   }
 
   // Add a custom field key-value pair
-  addCustomField() {
+  addCustomField(): void {
     this.customFields.push(
       this.fb.group({
-        key: ['', Validators.required],
+        key: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9_]+$/)]],
         value: ['', Validators.required]
       })
     );
   }
 
   // Remove a custom field
-  removeCustomField(index: number) {
+  removeCustomField(index: number): void {
     this.customFields.removeAt(index);
+    this.endpointForm.markAsDirty();
   }
 
   loadEndpoint(id: number): void {
     this.isLoading = true;
-    this.endpointService.getEndpoint(id).subscribe({
-      next: (endpoint) => {
-        // Clear existing custom fields
-        while (this.customFields.length) {
-          this.customFields.removeAt(0);
-        }
+    this.error = '';
 
-        // Add custom fields if any
-        if (endpoint.options?.customFields) {
-          Object.entries(endpoint.options.customFields).forEach(([key, value]) => {
-            this.customFields.push(
-              this.fb.group({
-                key: [key, Validators.required],
-                value: [value, Validators.required]
-              })
-            );
-          });
-        }
-
-        // Patch form values
-        this.endpointForm.patchValue({
-          name: endpoint.name,
-          description: endpoint.description || '',
-          owner: endpoint.owner,
-          type: endpoint.type,
-          options: {
-            region: endpoint.options?.region || '',
-            accountId: endpoint.options?.accountId || '',
-            projectId: endpoint.options?.projectId || '',
-            resourceGroup: endpoint.options?.resourceGroup || '',
-            namespace: endpoint.options?.namespace || '',
+    this.endpointService.getEndpoint(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (endpoint) => {
+          // Clear existing custom fields
+          while (this.customFields.length) {
+            this.customFields.removeAt(0);
           }
-        });
 
-        // Update form based on endpoint type
-        this.updateEndpointTypeFields(endpoint.type);
+          // Add custom fields if any
+          if (endpoint.options?.customFields) {
+            Object.entries(endpoint.options.customFields).forEach(([key, value]) => {
+              this.customFields.push(
+                this.fb.group({
+                  key: [key, [Validators.required, Validators.pattern(/^[a-zA-Z0-9_]+$/)]],
+                  value: [value, Validators.required]
+                })
+              );
+            });
+          }
 
-        this.isLoading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load endpoint details';
-        this.errorService.logError(err);
-        this.isLoading = false;
-      }
-    });
+          // Patch form values
+          this.endpointForm.patchValue({
+            name: endpoint.name,
+            description: endpoint.description || '',
+            owner: endpoint.owner,
+            type: endpoint.type,
+            options: {
+              region: endpoint.options?.region || '',
+              accountId: endpoint.options?.accountId || '',
+              projectId: endpoint.options?.projectId || '',
+              resourceGroup: endpoint.options?.resourceGroup || '',
+              namespace: endpoint.options?.namespace || '',
+            }
+          });
+
+          // Update form based on endpoint type
+          this.updateEndpointTypeFields(endpoint.type);
+
+          this.isLoading = false;
+          this.endpointForm.markAsPristine();
+        },
+        error: (err) => {
+          this.error = 'Failed to load endpoint details';
+          this.errorService.logError(err);
+          this.notificationService.error('Failed to load endpoint details');
+          this.isLoading = false;
+        }
+      });
   }
 
   updateEndpointTypeFields(type: EndpointType): void {
@@ -163,7 +191,7 @@ export class EndpointFormComponent implements OnInit {
     switch (type) {
       case EndpointType.AWS:
         regionControl?.setValidators([Validators.required]);
-        accountIdControl?.setValidators([Validators.required]);
+        accountIdControl?.setValidators([Validators.required, Validators.pattern(/^\d{12}$/)]);
         break;
       case EndpointType.GCP:
         projectIdControl?.setValidators([Validators.required]);
@@ -190,32 +218,40 @@ export class EndpointFormComponent implements OnInit {
   onSubmit(): void {
     if (this.endpointForm.invalid) {
       this.markFormGroupTouched(this.endpointForm);
+      this.notificationService.error('Please fix the form errors before submitting');
       return;
     }
 
     this.isSaving = true;
+    this.error = '';
 
     const endpointData = this.prepareEndpointData();
 
-    let saveObservable: Observable<Endpoint>;
+    const saveObservable = this.isEditMode && this.endpointId
+      ? this.endpointService.updateEndpoint(this.endpointId, endpointData)
+      : this.endpointService.createEndpoint(endpointData);
 
-    if (this.isEditMode && this.endpointId) {
-      saveObservable = this.endpointService.updateEndpoint(this.endpointId, endpointData);
-    } else {
-      saveObservable = this.endpointService.createEndpoint(endpointData);
-    }
+    saveObservable
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.isSaving = false;
+          this.endpointForm.markAsPristine();
 
-    saveObservable.subscribe({
-      next: (data) => {
-        this.isSaving = false;
-        this.router.navigate(['/endpoints', data.id]);
-      },
-      error: (err) => {
-        this.error = 'Failed to save endpoint';
-        this.errorService.logError(err);
-        this.isSaving = false;
-      }
-    });
+          const message = this.isEditMode
+            ? `Endpoint "${data.name}" updated successfully`
+            : `Endpoint "${data.name}" created successfully`;
+
+          this.notificationService.success(message);
+          this.router.navigate(['/endpoints', data.id]);
+        },
+        error: (err) => {
+          this.error = 'Failed to save endpoint';
+          this.errorService.logError(err);
+          this.notificationService.error('Failed to save endpoint');
+          this.isSaving = false;
+        }
+      });
   }
 
   prepareEndpointData(): Partial<Endpoint> {
@@ -283,5 +319,31 @@ export class EndpointFormComponent implements OnInit {
     } else {
       this.router.navigate(['/endpoints']);
     }
+  }
+
+  // Helper method to check form field validity
+  isInvalid(controlName: string): boolean {
+    const control = this.endpointForm.get(controlName);
+    return control ? control.invalid && control.touched : false;
+  }
+
+  // Helper method to check form field validity within the options group
+  isOptionsInvalid(controlName: string): boolean {
+    const control = this.endpointForm.get(`options.${controlName}`);
+    return control ? control.invalid && control.touched : false;
+  }
+
+  // Helper method to get error message for custom field key
+  getCustomFieldKeyError(index: number): string {
+    const control = this.customFields.at(index).get('key');
+    if (!control) return '';
+
+    if (control.hasError('required')) {
+      return 'Key is required';
+    }
+    if (control.hasError('pattern')) {
+      return 'Key can only contain letters, numbers, and underscores';
+    }
+    return '';
   }
 }

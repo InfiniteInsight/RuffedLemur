@@ -1,1 +1,66 @@
-<p>stats-widget works!</p>
+<!-- frontend/RuffedLemur/src/app/dashboard/components/stats-widget/stats-widget.component.html -->
+
+<div class="stats-container">
+  <h2>Certificate Status Overview</h2>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error && stats" class="stats-grid">
+    <!-- Total Certificates -->
+    <mat-card class="stats-card total">
+      <mat-card-content>
+        <div class="stat-header">
+          <mat-icon>vpn_key</mat-icon>
+          <span class="stat-title">Total Certificates</span>
+        </div>
+        <div class="stat-value">{{ stats.total || 0 }}</div>
+        <div class="stat-footer">Total managed certificates</div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Active Certificates -->
+    <mat-card class="stats-card active">
+      <mat-card-content>
+        <div class="stat-header">
+          <mat-icon>check_circle</mat-icon>
+          <span class="stat-title">Active</span>
+        </div>
+        <div class="stat-value">{{ stats.active || 0 }}</div>
+        <div class="stat-subtitle">{{ getPercentage(stats.active || 0, stats.total || 0) }}%</div>
+        <div class="stat-footer">Active certificates</div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Expiring Soon -->
+    <mat-card class="stats-card expiring">
+      <mat-card-content>
+        <div class="stat-header">
+          <mat-icon>timer</mat-icon>
+          <span class="stat-title">Expiring Soon</span>
+        </div>
+        <div class="stat-value">{{ stats.expiringLessThan30Days || 0 }}</div>
+        <div class="stat-subtitle">{{ getPercentage(stats.expiringLessThan30Days || 0, stats.total || 0) }}%</div>
+        <div class="stat-footer">Expiring in next 30 days</div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Expired Certificates -->
+    <mat-card class="stats-card expired">
+      <mat-card-content>
+        <div class="stat-header">
+          <mat-icon>highlight_off</mat-icon>
+          <span class="stat-title">Expired</span>
+        </div>
+        <div class="stat-value">{{ stats.expired || 0 }}</div>
+        <div class="stat-subtitle">{{ getPercentage(stats.expired || 0, stats.total || 0) }}%</div>
+        <div class="stat-footer">Expired certificates</div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

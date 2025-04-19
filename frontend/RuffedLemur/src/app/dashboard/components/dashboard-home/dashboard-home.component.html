@@ -1,107 +1,42 @@
+<!-- frontend/RuffedLemur/src/app/dashboard/components/dashboard-home/dashboard-home.component.html -->
+
 <div class="dashboard-container">
   <h1>Certificate Dashboard</h1>
+  <p class="dashboard-intro">Overview of your certificates, authorities, and upcoming expirations</p>
 
-  <div *ngIf="isLoading" class="loading-container">
-    <mat-spinner></mat-spinner>
-  </div>
+  <!-- Stats Widget -->
+  <app-stats-widget
+    [stats]="certificateStats"
+    [loading]="isLoadingStats"
+    [error]="statsError">
+  </app-stats-widget>
 
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
+  <!-- Expiring Certificates Widget -->
+  <app-expiring-certs-widget
+    [certificates]="expiringCertificates"
+    [loading]="isLoadingExpiring"
+    [error]="expiringError"
+    [daysToShow]="30">
+  </app-expiring-certs-widget>
 
-  <div *ngIf="!isLoading && !error" class="dashboard-content">
-    <!-- Stats Cards -->
-    <div class="stats-section">
-      <div class="stat-cards">
-        <mat-card class="stat-card total">
-          <mat-card-content>
-            <div class="stat-value">{{ certificateStats?.total || 0 }}</div>
-            <div class="stat-label">Total Certificates</div>
-          </mat-card-content>
-        </mat-card>
+  <!-- Certificates by Authority -->
+  <div class="authority-section">
+    <h2>Certificates by Authority</h2>
 
-        <mat-card class="stat-card active">
-          <mat-card-content>
-            <div class="stat-value">{{ certificateStats?.active || 0 }}</div>
-            <div class="stat-label">Active</div>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="stat-card expiring">
-          <mat-card-content>
-            <div class="stat-value">{{ certificateStats?.expiringSoon || 0 }}</div>
-            <div class="stat-label">Expiring Soon</div>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="stat-card expired">
-          <mat-card-content>
-            <div class="stat-value">{{ certificateStats?.expired || 0 }}</div>
-            <div class="stat-label">Expired</div>
-          </mat-card-content>
-        </mat-card>
-      </div>
+    <div *ngIf="isLoadingAuth" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
     </div>
 
-    <!-- Expiring Certificates Table -->
-    <div class="expiring-section">
-      <h2>Certificates Expiring in Next 30 Days</h2>
-
-      <div *ngIf="expiringCertificates.length === 0" class="no-data-message">
-        No certificates expiring soon.
-      </div>
-
-      <table mat-table [dataSource]="expiringCertificates" class="expiring-table" *ngIf="expiringCertificates.length > 0">
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef>Name</th>
-          <td mat-cell *matCellDef="let cert">{{ cert.name }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="commonName">
-          <th mat-header-cell *matHeaderCellDef>Common Name</th>
-          <td mat-cell *matCellDef="let cert">{{ cert.commonName }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="authorityName">
-          <th mat-header-cell *matHeaderCellDef>Authority</th>
-          <td mat-cell *matCellDef="let cert">{{ cert.authorityName }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="expirationDate">
-          <th mat-header-cell *matHeaderCellDef>Expiration Date</th>
-          <td mat-cell *matCellDef="let cert">{{ cert.expirationDate | date }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="daysUntilExpiration">
-          <th mat-header-cell *matHeaderCellDef>Days Left</th>
-          <td mat-cell *matCellDef="let cert" [ngClass]="{'warning': cert.daysUntilExpiration < 7, 'critical': cert.daysUntilExpiration < 3}">
-            {{ cert.daysUntilExpiration }}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let cert">
-            <button mat-icon-button [routerLink]="['/certificates', cert.id]">
-              <mat-icon>visibility</mat-icon>
-            </button>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="['name', 'commonName', 'authorityName', 'expirationDate', 'daysUntilExpiration', 'actions']"></tr>
-        <tr mat-row *matRowDef="let row; columns: ['name', 'commonName', 'authorityName', 'expirationDate', 'daysUntilExpiration', 'actions']"></tr>
-      </table>
+    <div *ngIf="authError" class="error-message">
+      {{ authError }}
     </div>
 
-    <!-- Certificates by Authority -->
-    <div class="authority-section">
-      <h2>Certificates by Authority</h2>
-
+    <div *ngIf="!isLoadingAuth && !authError">
       <div *ngIf="certificatesByAuthority.length === 0" class="no-data-message">
         No certificate authorities configured.
       </div>
 
-      <div *ngIf="certificatesByAuthority.length > 0" class="authority-cards">
+      <div *ngIf="certificatesByAuthority.length > 0" class="authority-grid">
         <mat-card *ngFor="let auth of certificatesByAuthority" class="authority-card">
           <mat-card-header>
             <mat-card-title>{{ auth.authorityName }}</mat-card-title>
@@ -111,10 +46,44 @@
               <div class="authority-count">{{ auth.count }}</div>
               <div class="authority-percentage">{{ auth.percentage }}%</div>
             </div>
+            <div class="progress-container">
+              <div class="progress-bar" [style.width.%]="auth.percentage"></div>
+            </div>
+            <div class="authority-expiry" *ngIf="auth.authorityExpirationDate">
+              Expires: {{ auth.authorityExpirationDate | date:'mediumDate' }}
+            </div>
           </mat-card-content>
-          <!-- TO DO: certificates by Owner, Team, Source, Time -->
+          <mat-card-actions>
+            <a mat-button color="primary" [routerLink]="['/certificates']"
+               [queryParams]="{authority: auth.id}">
+              View Certificates
+            </a>
+          </mat-card-actions>
         </mat-card>
       </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h2>Quick Actions</h2>
+    <div class="actions-grid">
+      <a mat-raised-button color="primary" routerLink="/certificates/new">
+        <mat-icon>add</mat-icon>
+        Create Certificate
+      </a>
+      <a mat-raised-button color="accent" routerLink="/authorities/new">
+        <mat-icon>security</mat-icon>
+        New Authority
+      </a>
+      <a mat-raised-button routerLink="/certificates" [queryParams]="{expiring: 'true'}">
+        <mat-icon>timer</mat-icon>
+        View All Expiring
+      </a>
+      <a mat-raised-button routerLink="/reports/new">
+        <mat-icon>assessment</mat-icon>
+        Generate Report
+      </a>
     </div>
   </div>
 </div>
