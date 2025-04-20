@@ -122,18 +122,32 @@ export class PluginListComponent implements OnInit {
       this.pluginService.disablePlugin(plugin.id!) :
       this.pluginService.enablePlugin(plugin.id!);
 
+    const actionName = plugin.enabled ? 'disable' : 'enable';
+
     action.subscribe({
       next: (updatedPlugin) => {
         const index = this.plugins.findIndex(p => p.id === plugin.id);
         if (index !== -1) {
           this.plugins[index].enabled = updatedPlugin.enabled;
         }
+        // Show success notification
+        this.errorService.showSuccess(`Plugin ${plugin.name} ${actionName}d successfully`);
         // Refresh stats after toggling
         this.loadStats();
       },
       error: (err) => {
-        this.errorService.logError(err);
-        // Show error notification
+        // More detailed error handling with specific message
+        let errorMessage = `Failed to ${actionName} plugin`;
+
+        if (err.status === 403) {
+          errorMessage = `You don't have permission to ${actionName} this plugin`;
+        } else if (err.status === 409) {
+          errorMessage = `Cannot ${actionName} plugin. It may be in use by other components`;
+        }
+
+        this.errorService.handleError(err, errorMessage);
+        // Revert the toggle in the UI
+        plugin.enabled = !plugin.enabled;
       }
     });
   }
@@ -150,19 +164,32 @@ export class PluginListComponent implements OnInit {
   }
 
   uninstallPlugin(plugin: Plugin): void {
-    if (confirm(`Are you sure you want to uninstall "${plugin.name}"? This action cannot be undone.`)) {
-      this.pluginService.uninstallPlugin(plugin.id!).subscribe({
-        next: () => {
-          // Remove from list or refresh
-          this.loadPlugins();
-          this.loadStats();
-        },
-        error: (err) => {
-          this.error = 'Failed to uninstall plugin';
-          this.errorService.logError(err);
-        }
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirm Plugin Uninstallation',
+        message: `Are you sure you want to uninstall "${plugin.name}"? This action cannot be undone.`,
+        confirmButtonText: 'Uninstall',
+        cancelButtonText: 'Cancel',
+        type: 'danger'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.pluginService.uninstallPlugin(plugin.id!).subscribe({
+          next: () => {
+            this.loadPlugins();
+            this.loadStats();
+            this.errorService.showSuccess(`Plugin ${plugin.name} uninstalled successfully`);
+          },
+          error: (err) => {
+            this.error = 'Failed to uninstall plugin';
+            this.errorService.handleError(err, 'Plugin Uninstallation');
+          }
+        });
+      }
+    });
   }
 
   getPluginTypeLabel(type: PluginType): string {
