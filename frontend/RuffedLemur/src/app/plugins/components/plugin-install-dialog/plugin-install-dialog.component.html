@@ -1,0 +1,64 @@
+<!-- frontend/RuffedLemur/src/app/plugins/components/plugin-install-dialog/plugin-install-dialog.component.html -->
+<h2 mat-dialog-title>Install Plugin</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="installForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Search Plugins</mat-label>
+      <input matInput formControlName="pluginName" placeholder="Enter plugin name">
+      <mat-icon matSuffix>search</mat-icon>
+      <mat-error *ngIf="installForm.get('pluginName')?.hasError('required')">
+        Plugin name is required
+      </mat-error>
+    </mat-form-field>
+
+    <div class="type-filters">
+      <button
+        mat-stroked-button
+        [class.active]="selectedType === null"
+        (click)="filterByType(null)">
+        All Types
+      </button>
+      <button
+        *ngFor="let type of pluginTypes"
+        mat-stroked-button
+        [class.active]="selectedType === type"
+        (click)="filterByType(type)">
+        {{ getPluginTypeLabel(type) }}
+      </button>
+    </div>
+
+    <div class="plugin-list-container">
+      <mat-nav-list class="plugin-list">
+        <mat-list-item
+          *ngFor="let plugin of filteredPlugins"
+          (click)="selectPlugin(plugin)">
+          <mat-icon matListIcon>extension</mat-icon>
+          <div matLine class="plugin-name">{{ plugin.name }}</div>
+          <div matLine class="plugin-info">
+            <span class="plugin-type type-{{ plugin.type }}">{{ getPluginTypeLabel(plugin.type) }}</span>
+            <span *ngIf="plugin.version" class="plugin-version">v{{ plugin.version }}</span>
+          </div>
+          <div matLine *ngIf="plugin.description" class="plugin-description">
+            {{ plugin.description }}
+          </div>
+        </mat-list-item>
+
+        <div *ngIf="filteredPlugins.length === 0" class="no-plugins-message">
+          No matching plugins found
+        </div>
+      </mat-nav-list>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button
+    mat-raised-button
+    color="primary"
+    [disabled]="installForm.invalid"
+    (click)="onInstall()">
+    Install
+  </button>
+</mat-dialog-actions>
