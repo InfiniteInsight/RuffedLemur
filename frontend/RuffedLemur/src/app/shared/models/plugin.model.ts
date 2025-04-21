@@ -7,7 +7,7 @@ export interface Plugin {
   enabled: boolean;
   type: PluginType;
   options?: PluginOptions;
-  metadata: PluginMetadata;
+  metadata?: PluginMetadata;
   createdAt?: Date;
   updatedAt?: Date;
 }

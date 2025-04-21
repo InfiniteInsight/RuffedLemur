@@ -1,4 +1,4 @@
-// plugin-list.component.spec.ts - Enhanced version
+// plugin-list.component.spec.ts - Corrected version with null check
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -12,7 +12,8 @@ import { of, throwError } from 'rxjs';
 import { PluginListComponent } from './plugin-list.component';
 import { PluginService } from '../../services/plugin.service';
 import { ErrorService } from '../../../core/services/error/error.service';
-import { Plugin, PluginType, PluginStat } from '../../../shared/models/plugin.model';
+import { Plugin, PluginType, PluginStat, PluginMetadata, PluginOptions } from '../../../shared/models/plugin.model';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 describe('PluginListComponent', () => {
   let component: PluginListComponent;
@@ -21,24 +22,50 @@ describe('PluginListComponent', () => {
   let errorServiceSpy: jasmine.SpyObj<ErrorService>;
 
   // Mock data
+  const mockPluginMetadata: PluginMetadata = {
+    apiKey: {
+      required: true,
+      type: 'string',
+      description: 'API key for authentication',
+      validation: '^[A-Za-z0-9]+$'
+    },
+    endpoint: {
+      required: false,
+      type: 'string',
+      description: 'Service endpoint URL',
+      default: 'https://api.default.com'
+    }
+  };
+
+  const mockPluginOptions: PluginOptions = {
+    name: 'apiSettings',
+    description: 'API Configuration Options',
+    type: 'string',
+    required: true
+  };
+
   const mockPlugins: Plugin[] = [
     {
-      id: 1,
+      id: 1, // Ensure ID is provided
       name: 'Test Plugin 1',
       description: 'Test description',
       version: '1.0.0',
       author: 'Test Author',
       enabled: true,
-      type: PluginType.ISSUER
+      type: PluginType.ISSUER,
+      metadata: mockPluginMetadata,
+      options: mockPluginOptions
     },
     {
-      id: 2,
+      id: 2, // Ensure ID is provided
       name: 'Test Plugin 2',
       description: 'Another test plugin',
       version: '1.0.0',
       author: 'Test Author',
       enabled: false,
-      type: PluginType.NOTIFICATION
+      type: PluginType.NOTIFICATION,
+      metadata: mockPluginMetadata,
+      options: mockPluginOptions
     }
   ];
 
@@ -70,7 +97,7 @@ describe('PluginListComponent', () => {
     pluginServiceSpy.uninstallPlugin.and.returnValue(of(undefined));
 
     await TestBed.configureTestingModule({
-      declarations: [PluginListComponent],
+      declarations: [PluginListComponent, ConfirmationDialogComponent],
       imports: [
         RouterTestingModule,
         HttpClientTestingModule,
@@ -120,27 +147,29 @@ describe('PluginListComponent', () => {
   });
 
   it('should handle plugin enable correctly', () => {
-    // Set up
-    const plugin = {...mockPlugins[1]}; // Disabled plugin
+    // Set up - ensure plugin has a non-undefined ID
+    const plugin = {...mockPlugins[1]};
+    expect(plugin.id).toBeDefined(); // Assert ID exists
 
     // Call the method
     component.togglePluginStatus(plugin);
 
-    // Verify
-    expect(pluginServiceSpy.enablePlugin).toHaveBeenCalledWith(plugin.id);
+    // Verify with non-null assertion
+    expect(pluginServiceSpy.enablePlugin).toHaveBeenCalledWith(plugin.id!);
     expect(errorServiceSpy.showSuccess).toHaveBeenCalled();
     expect(pluginServiceSpy.getPluginStats).toHaveBeenCalled();
   });
 
   it('should handle plugin disable correctly', () => {
-    // Set up
-    const plugin = {...mockPlugins[0]}; // Enabled plugin
+    // Set up - ensure plugin has a non-undefined ID
+    const plugin = {...mockPlugins[0]};
+    expect(plugin.id).toBeDefined(); // Assert ID exists
 
     // Call the method
     component.togglePluginStatus(plugin);
 
-    // Verify
-    expect(pluginServiceSpy.disablePlugin).toHaveBeenCalledWith(plugin.id);
+    // Verify with non-null assertion
+    expect(pluginServiceSpy.disablePlugin).toHaveBeenCalledWith(plugin.id!);
     expect(errorServiceSpy.showSuccess).toHaveBeenCalled();
     expect(pluginServiceSpy.getPluginStats).toHaveBeenCalled();
   });

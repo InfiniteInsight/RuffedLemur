@@ -24,9 +24,9 @@ export class PluginConfigComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if ((changes.pluginSchema && !changes.pluginSchema.firstChange) ||
-        (changes.existingConfig && !changes.existingConfig.firstChange)) {
-      this.buildForm();
+    if ((changes['pluginSchema'] && !changes['pluginSchema'].firstChange) ||
+    (changes['existingConfig'] && !changes['existingConfig'].firstChange)) {
+  this.buildForm();
     }
   }
 
