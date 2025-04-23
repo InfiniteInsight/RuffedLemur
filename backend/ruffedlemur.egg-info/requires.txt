@@ -1,0 +1,12 @@
+flask
+flask-sqlalchemy
+flask-migrate
+flask-jwt-extended
+flask-cors
+flask-smorest
+arrow
+cryptography
+requests
+typer
+python-dotenv
+redis

@@ -1,0 +1,2 @@
+[console_scripts]
+ruffedlemur = ruffedlemur.cliApp:app
