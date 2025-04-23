@@ -2,7 +2,10 @@
 Service layer for the RuffedLemur App
 """
 
-from ruffedlemur.services.authService import authenticate_user, refresh_access_token, require_permission
-from ruffedlemur.services.certificateService import {
+from . import authService
+from . import certificateService
 
-}
+from authService import authenticate_user, refresh_access_token
+
+# from .authService import authenticate_user, refresh_access_token
+# from .certificateService import create_certificate, get_certificate

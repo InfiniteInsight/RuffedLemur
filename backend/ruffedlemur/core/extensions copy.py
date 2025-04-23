@@ -47,27 +47,27 @@ def user_lookup_callback(_jwt_header, jwt_data):
     Returns:
         User object or None
     """
-    from ruffedlemur.models.userAndRolesModel import User
+    from ruffedlemur.models.user import User
     
     identity = jwt_data["sub"]
     return User.query.filter_by(id=identity).one_or_none()
 
 
 # API error handlers
-#@api.handle_http_exception
-#def handle_http_exception(error):
-#    """
-#    Global HTTP exception handler for API.
-#    
-#    Args:
-#        error: HTTP exception
-#        
-#    Returns:
-#        Error response
-#    """
-#    response = {
-#        "code": error.code,
-#        "status": "error",
-#        "message": error.description,
-#    }
-#    return response, error.code
+@api.handle_http_exception
+def handle_http_exception(error):
+    """
+    Global HTTP exception handler for API.
+    
+    Args:
+        error: HTTP exception
+        
+    Returns:
+        Error response
+    """
+    response = {
+        "code": error.code,
+        "status": "error",
+        "message": error.description,
+    }
+    return response, error.code

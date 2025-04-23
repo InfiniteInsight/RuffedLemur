@@ -9,7 +9,7 @@ from flask import Flask
 from flask_cors import CORS
 
 from ruffedlemur.core.extensions import db, migrate, jwt, api
-from ruffedlemur.core.config import config_by_name
+from ruffedlemur.core.lemur_conf import config_by_name
 from ruffedlemur.middleware.security_headers import setup_security_headers
 
 
@@ -83,11 +83,10 @@ def initialize_extensions(app):
 
 def register_blueprints(app):
     """Register Flask blueprints."""
-    from ruffedlemur.api.endpoints.certificates import certificates_bp
-    from ruffedlemur.api.endpoints.authorities import authorities_bp
-    from ruffedlemur.api.endpoints.users import users_bp
-    from ruffedlemur.api.endpoints.roles import roles_bp
-    from ruffedlemur.api.endpoints.auth import auth_bp
+    from ruffedlemur.api.endpoints.certificatesEndpoint import certificates_bp
+    from ruffedlemur.api.endpoints.authoritiesEndpoint import authorities_bp
+    from backend.ruffedlemur.api.endpoints.usersAndRolesEndpoint import users_bp, roles_bp
+    from ruffedlemur.api.endpoints.authEndpoint import auth_bp
     
     app.register_blueprint(certificates_bp, url_prefix='/api/v1')
     app.register_blueprint(authorities_bp, url_prefix='/api/v1')

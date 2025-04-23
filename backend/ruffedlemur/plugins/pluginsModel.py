@@ -252,7 +252,7 @@ def init_plugins(app):
 """
 Plugin initialization for ruffedLemur.
 """
-from ruffedlemur.plugins.base import (
+from ruffedlemur.plugins.pluginsModel import (
     Plugin, SourcePlugin, DestinationPlugin, IssuerPlugin, NotificationPlugin,
     register_plugin, get_plugin, get_plugins_by_type, init_plugins
 )

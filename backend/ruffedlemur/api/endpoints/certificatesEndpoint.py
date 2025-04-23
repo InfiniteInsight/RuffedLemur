@@ -10,7 +10,7 @@ from flask_jwt_extended import jwt_required, get_current_user
 from marshmallow import Schema, fields, validate, ValidationError, EXCLUDE
 from sqlalchemy import or_, and_
 
-from ruffedlemur.models.certificate import Certificate
+from ruffedlemur.models.certificateModel import Certificate
 from ruffedlemur.services.certificateService import (
     create_certificate, get_certificate, get_certificates
 )

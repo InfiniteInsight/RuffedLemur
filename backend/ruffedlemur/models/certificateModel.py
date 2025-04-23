@@ -14,9 +14,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
-from ruffedlemur.models.base import BaseModel
+from ruffedlemur.models.baseModel import BaseModel
 from ruffedlemur.core.extensions import db
-from ruffedlemur.utils.crypto import parse_certificate
+from ruffedlemur.utils.cryptoUtils import parse_certificate
 
 # Many-to-many relationship tables
 certificate_destination_associations = Table(
@@ -169,7 +169,7 @@ class Certificate(BaseModel):
     @hybrid_property
     def organization(self):
         """Extract organization from distinguished name."""
-        from ruffedlemur.utils.crypto import get_organization_from_dn
+        from ruffedlemur.utils.cryptoUtils import get_organization_from_dn
         if self.distinguished_name:
             return get_organization_from_dn(self.distinguished_name)
         return None
@@ -177,7 +177,7 @@ class Certificate(BaseModel):
     @hybrid_property
     def organizational_unit(self):
         """Extract organizational unit from distinguished name."""
-        from ruffedlemur.utils.crypto import get_organizational_unit_from_dn
+        from ruffedlemur.utils.cryptoUtils import get_organizational_unit_from_dn
         if self.distinguished_name:
             return get_organizational_unit_from_dn(self.distinguished_name)
         return None
@@ -185,7 +185,7 @@ class Certificate(BaseModel):
     @hybrid_property
     def country(self):
         """Extract country from distinguished name."""
-        from ruffedlemur.utils.crypto import get_country_from_dn
+        from ruffedlemur.utils.cryptoUtils import get_country_from_dn
         if self.distinguished_name:
             return get_country_from_dn(self.distinguished_name)
         return None

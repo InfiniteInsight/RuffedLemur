@@ -9,7 +9,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.dialects.postgresql import JSONB
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from ruffedlemur.models.base import BaseModel
+from ruffedlemur.models.baseModel import BaseModel
 from ruffedlemur.core.extensions import db
 
 

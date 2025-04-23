@@ -10,9 +10,9 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from ruffedlemur.models.base import BaseModel
+from ruffedlemur.models.baseModel import BaseModel
 from ruffedlemur.core.extensions import db
-from ruffedlemur.utils.crypto import parse_certificate
+from ruffedlemur.utils.cryptoUtils import parse_certificate
 
 
 class Authority(BaseModel):
