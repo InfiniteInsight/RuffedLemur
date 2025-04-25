@@ -3,7 +3,7 @@
 
 Revision ID: 002_plugin_tables
 Revises: 001_initial_schema
-Create Date: 2023-09-01 11:00:00.000000
+Create Date: 2025-04-14 10:00:00.000000
 
 """
 from alembic import op

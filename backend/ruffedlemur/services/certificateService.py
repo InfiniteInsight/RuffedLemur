@@ -18,7 +18,7 @@ from sqlalchemy.orm import joinedload
 from ruffedlemur.core.extensions import db
 from ruffedlemur.models.certificateModel import Certificate
 from ruffedlemur.models.authorityModel import Authority
-from ruffedlemur.plugins import get_plugin
+from ruffedlemur.plugins.pluginsModel import get_plugin
 from ruffedlemur.utils.cryptoUtils import (
     generate_private_key, create_csr, parse_certificate, 
     get_san_from_certificate, get_cn_from_certificate

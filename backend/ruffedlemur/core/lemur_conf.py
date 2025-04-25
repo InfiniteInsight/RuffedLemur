@@ -2,13 +2,13 @@
 """
 Configuration module for ruffedLemur.
 
-This module manages different configuration environments for the application.
+This module manages different configurations for the application.
 """
 import os
 from datetime import timedelta
 from typing import Dict, Type, Any
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv#
 
 # Load environment variables from .env file
 load_dotenv()
@@ -19,12 +19,12 @@ class BaseConfig:
     
     # Application
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
-    DEBUG = False
-    TESTING = False
+    DEBUG = True
+    TESTING = True
     
     # Database
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI', 'postgresql://postgres:736pNSIOwPZa6Ib6MVgi@localhost:5432/ruffedlemur')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI', 'postgresql+psycopg://ruffedlemur:ruffedlemur@localhost:5432/ruffedlemur')
     
     # JWT
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)
@@ -71,7 +71,7 @@ class DevelopmentConfig(BaseConfig):
     
     DEBUG = True
     SQLALCHEMY_ECHO = True
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)  # Extended for development
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=10)  # Extended for development
 
 
 class TestingConfig(BaseConfig):
@@ -79,7 +79,7 @@ class TestingConfig(BaseConfig):
     
     TESTING = True
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.getenv('TEST_DATABASE_URI', 'postgresql://postgres:postgres@localhost:5432/ruffedlemur_test')
+    SQLALCHEMY_DATABASE_URI = os.getenv('TEST_DATABASE_URI', 'postgresql://ruffedlemur:ruffedlemur@localhost:5432/ruffedlemur_test')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=5)  # Short expiry for testing
 
 
@@ -88,7 +88,9 @@ class ProductionConfig(BaseConfig):
     
     SECRET_KEY = os.getenv('SECRET_KEY')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
-    LEMUR_TOKEN_SECRET = os.getenv('LEMUR_TOKEN_SECRET')
+    #LEMUR_TOKEN_SECRET = os.getenv('LEMUR_TOKEN_SECRET')
+    LEMUR_TOKEN_SECRET = "Aqu6OZ4q%QinwDM&2UIp*KR@"
+    LEMUR_TOKEN_SECRETS = [LEMUR_TOKEN_SECRET]
     
     # Ensure these are set in production
     if not all([SECRET_KEY, JWT_SECRET_KEY, LEMUR_TOKEN_SECRET]):

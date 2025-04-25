@@ -8,9 +8,12 @@ from flask import Blueprint, request, jsonify, redirect, session, url_for, curre
 from flask_smorest import Blueprint as SmorestBlueprint, abort
 from flask_jwt_extended import (
     jwt_required, get_jwt_identity, get_current_user,
-    verify_jwt_in_request, create_access_token
+    verify_jwt_in_request, create_access_token, get_jwt
 )
 from marshmallow import Schema, fields, validate, ValidationError
+import redis
+import datetime
+from sqlalchemy import or_
 
 from ruffedlemur.api.errors import UnauthorizedError, ValidationError as APIValidationError
 from ruffedlemur.services.authService import (
@@ -19,6 +22,40 @@ from ruffedlemur.services.authService import (
 )
 from ruffedlemur.utils.security import generate_csrf_token, validate_csrf_token
 from ruffedlemur.utils.rate_limit import rate_limit
+from ruffedlemur.core.extensions import db, jwt
+from ruffedlemur.models.userAndRolesModel import User, Role
+
+
+# Initialize Redis for JWT blacklisting
+try:
+    jwt_redis_blocklist = redis.Redis(
+        host=current_app.config.get('REDIS_HOST', 'localhost'),
+        port=current_app.config.get('REDIS_PORT', 6379),
+        db=current_app.config.get('REDIS_JWT_DB', 0),
+        decode_responses=True
+    )
+except Exception as e:
+    current_app.logger.error(f"Failed to connect to Redis: {str(e)}")
+    # Fallback to a simple in-memory set for development/testing
+    jwt_blocklist = set()
+
+
+# Register a callback function that takes the JWT payload and returns
+# a unique key to be used for storing the revoked token in Redis
+@jwt.token_in_blocklist_loader
+def check_if_token_is_revoked(jwt_header, jwt_payload):
+    """
+    Callback function to check if a JWT exists in the Redis blocklist.
+    """
+    jti = jwt_payload["jti"]
+    
+    try:
+        # Try to check in Redis first
+        token_in_redis = jwt_redis_blocklist.get(jti)
+        return token_in_redis is not None
+    except Exception:
+        # Fallback to in-memory blocklist if Redis is unavailable
+        return jti in jwt_blocklist
 
 
 # Define schemas
@@ -104,9 +141,7 @@ def login(login_data):
 
 
 @auth_api.route('/refresh', methods=['POST'])
-#@jwt_required(refresh=True)
-@auth_api.arguments(LoginSchema)
-#@auth_api.response(200, TokenSchema)
+@jwt_required(refresh=True)
 @auth_api.response(200, RefreshTokenSchema)
 def refresh():
     """
@@ -136,9 +171,7 @@ def refresh():
 
 
 @auth_api.route('/me', methods=['GET'])
-#@jwt_required()
-@auth_api.arguments(LoginSchema)
-@auth_api.response(200, TokenSchema)
+@jwt_required()
 def me():
     """
     Get current user information.
@@ -159,9 +192,7 @@ def me():
 
 
 @auth_api.route('/logout', methods=['POST'])
-#@jwt_required()
-@auth_api.arguments(LoginSchema)
-@auth_api.response(200, TokenSchema)
+@jwt_required()
 def logout():
     """
     Logout user.
@@ -177,8 +208,27 @@ def logout():
       401:
         description: Not authenticated
     """
-    # JWT blacklisting would be implemented here
-    # For now, we'll just return a success message
+    # Get JWT token details
+    jwt_data = get_jwt()
+    jti = jwt_data["jti"]
+    
+    # Get token expiration time from JWT claims
+    exp_timestamp = jwt_data["exp"]
+    now = datetime.datetime.now(datetime.timezone.utc)
+    target_timestamp = datetime.datetime.timestamp(now + datetime.timedelta(hours=2))
+    
+    # Calculate the token's remaining lifetime
+    # Use 2 hours more than the actual expiration as a buffer
+    ttl = max(int(target_timestamp - datetime.datetime.timestamp(now)), 0)
+    
+    try:
+        # Try to add the JTI to Redis blocklist with a TTL
+        jwt_redis_blocklist.set(jti, "", ex=ttl)
+    except Exception as e:
+        current_app.logger.error(f"Failed to add token to Redis blocklist: {str(e)}")
+        # Fallback to in-memory blocklist
+        jwt_blocklist.add(jti)
+    
     return jsonify({
         'status': 'success',
         'message': 'Logged out successfully'
@@ -534,16 +584,62 @@ def api_sso_callback(provider_name):
             'message': str(e),
             'code': 401
         }), 401
-    
+
+
 # Cross Site Request Forgery protection
 @auth_bp.route('/api/v1/csrf-token', methods=['GET'])
 def get_csrf_token():
     """Get CSRF token for forms."""
-    token = generate_csrf_token()  # Implement this function
+    # Generate a new CSRF token
+    token = generate_csrf_token()
+    
+    # Return the token to the client
     return jsonify({
         'token': token
     })
 
+
+# Helper function to set auth cookies
+def set_auth_cookies(response, tokens):
+    """
+    Set authentication cookies in the response.
+    
+    Args:
+        response: Flask response object
+        tokens: Dictionary containing access and refresh tokens
+    
+    Returns:
+        Response with cookies set
+    """
+    # Set access token cookie
+    response.set_cookie(
+        'access_token',
+        tokens['access_token'],
+        max_age=tokens['expires_in'],
+        httponly=True,
+        secure=current_app.config.get('ENV') == 'production',
+        samesite='Lax'
+    )
+    
+    # Set refresh token cookie if available
+    if 'refresh_token' in tokens:
+        # Get refresh token expiry from config
+        refresh_expires = current_app.config.get('JWT_REFRESH_TOKEN_EXPIRES', datetime.timedelta(days=30))
+        if isinstance(refresh_expires, datetime.timedelta):
+            refresh_expires_seconds = refresh_expires.total_seconds()
+        else:
+            refresh_expires_seconds = 30 * 24 * 60 * 60  # Default to 30 days
+        
+        response.set_cookie(
+            'refresh_token',
+            tokens['refresh_token'],
+            max_age=refresh_expires_seconds,
+            httponly=True,
+            secure=current_app.config.get('ENV') == 'production',
+            samesite='Lax'
+        )
+    
+    return response
 
 
 # Register blueprint with Flask app
