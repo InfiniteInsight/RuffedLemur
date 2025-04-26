@@ -13,6 +13,7 @@ from flask_jwt_extended import (
 from marshmallow import Schema, fields, validate, ValidationError
 import redis
 import datetime
+import logging
 from sqlalchemy import or_
 
 from ruffedlemur.api.errors import UnauthorizedError, ValidationError as APIValidationError
@@ -25,19 +26,29 @@ from ruffedlemur.utils.rate_limit import rate_limit
 from ruffedlemur.core.extensions import db, jwt
 from ruffedlemur.models.userAndRolesModel import User, Role
 
+# Set up module-level logger
+logger = logging.getLogger(__name__)
 
-# Initialize Redis for JWT blacklisting
-try:
-    jwt_redis_blocklist = redis.Redis(
-        host=current_app.config.get('REDIS_HOST', 'localhost'),
-        port=current_app.config.get('REDIS_PORT', 6379),
-        db=current_app.config.get('REDIS_JWT_DB', 0),
-        decode_responses=True
-    )
-except Exception as e:
-    current_app.logger.error(f"Failed to connect to Redis: {str(e)}")
-    # Fallback to a simple in-memory set for development/testing
-    jwt_blocklist = set()
+# Initialize placeholder variables for JWT blacklisting
+jwt_redis_blocklist = None
+jwt_blocklist = set()  # Fallback in-memory set
+
+def init_jwt_blocklist(app):
+    """Initialize JWT blocklist with a Redis connection."""
+    global jwt_redis_blocklist
+    
+    try:
+        jwt_redis_blocklist = redis.Redis(
+            host=app.config.get('REDIS_HOST', 'localhost'),
+            port=app.config.get('REDIS_PORT', 6379),
+            db=app.config.get('REDIS_JWT_DB', 0),
+            decode_responses=True
+        )
+        app.logger.info("JWT Redis blocklist initialized")
+    except Exception as e:
+        app.logger.error(f"Failed to connect to Redis: {str(e)}")
+        # Fallback to a simple in-memory set for development/testing
+        app.logger.warning("Using in-memory JWT blocklist instead (not suitable for production)")
 
 
 # Register a callback function that takes the JWT payload and returns
@@ -49,12 +60,16 @@ def check_if_token_is_revoked(jwt_header, jwt_payload):
     """
     jti = jwt_payload["jti"]
     
-    try:
-        # Try to check in Redis first
-        token_in_redis = jwt_redis_blocklist.get(jti)
-        return token_in_redis is not None
-    except Exception:
-        # Fallback to in-memory blocklist if Redis is unavailable
+    if jwt_redis_blocklist is not None:
+        try:
+            # Try to check in Redis first
+            token_in_redis = jwt_redis_blocklist.get(jti)
+            return token_in_redis is not None
+        except Exception:
+            # Fallback to in-memory blocklist if Redis is unavailable
+            return jti in jwt_blocklist
+    else:
+        # Use in-memory blocklist if Redis wasn't initialized
         return jti in jwt_blocklist
 
 
@@ -223,7 +238,11 @@ def logout():
     
     try:
         # Try to add the JTI to Redis blocklist with a TTL
-        jwt_redis_blocklist.set(jti, "", ex=ttl)
+        if jwt_redis_blocklist is not None:
+            jwt_redis_blocklist.set(jti, "", ex=ttl)
+        else:
+            # Fallback to in-memory blocklist
+            jwt_blocklist.add(jti)
     except Exception as e:
         current_app.logger.error(f"Failed to add token to Redis blocklist: {str(e)}")
         # Fallback to in-memory blocklist
@@ -233,9 +252,6 @@ def logout():
         'status': 'success',
         'message': 'Logged out successfully'
     })
-
-
-# ruffedlemur/api/endpoints/authEndpoint.py (continued)
 
 @auth_api.route('/sso/providers', methods=['GET'])
 @auth_api.response(200, SSOProvidersSchema)

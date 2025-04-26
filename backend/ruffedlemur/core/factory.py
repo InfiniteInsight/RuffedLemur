@@ -1,4 +1,4 @@
-# backend/core/factory.py
+# backend/ruffedlemur/core/factory.py
 """
 Application factory module for ruffedLemur.
 
@@ -46,7 +46,7 @@ def create_app(config_name="development"):
         # In development, allow all origins
         CORS(app)
 
-     # Configure session security
+    # Configure session security
     app.config['SESSION_COOKIE_SECURE'] = app.config.get('ENV') == 'production'
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -79,13 +79,18 @@ def initialize_extensions(app):
     migrate.init_app(app, db)
     jwt.init_app(app)
     api.init_app(app)
+    
+    # Initialize JWT blocklist after JWT is configured
+    with app.app_context():
+        from ruffedlemur.api.endpoints.authEndpoint import init_jwt_blocklist
+        init_jwt_blocklist(app)
 
 
 def register_blueprints(app):
     """Register Flask blueprints."""
     from ruffedlemur.api.endpoints.certificatesEndpoint import certificates_bp
     from ruffedlemur.api.endpoints.authoritiesEndpoint import authorities_bp
-    from backend.ruffedlemur.api.endpoints.usersAndRolesEndpoint import users_bp, roles_bp
+    from ruffedlemur.api.endpoints.usersAndRolesEndpoint import users_bp, roles_bp
     from ruffedlemur.api.endpoints.authEndpoint import auth_bp
     
     app.register_blueprint(certificates_bp, url_prefix='/api/v1')
@@ -119,5 +124,5 @@ def register_commands(app):
 def initialize_plugins(app):
     """Initialize plugins."""
     # Import and initialize plugins here
-    from ruffedlemur.plugins import init_plugins
+    from ruffedlemur.plugins.pluginsModel import init_plugins
     init_plugins(app)
