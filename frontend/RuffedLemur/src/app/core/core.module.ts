@@ -3,7 +3,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { HttpClientModule } from '@angular/common/http';
+//import { HttpClientModule } from '@angular/common/http';
 
 // Material imports
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -35,7 +35,7 @@ import { UnauthorizedComponent } from './components/unauthorized/unauthorized.co
   imports: [
     CommonModule,
     RouterModule,
-    HttpClientModule,
+    //HttpClientModule,
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
